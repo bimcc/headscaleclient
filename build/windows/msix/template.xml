@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MsixPackagingToolTemplate
+    xmlns="http://schemas.microsoft.com/msix/packaging/msixpackagingtool/template/2022">
+    <Settings
+        AllowTelemetry="false"
+        ApplyACLsToPackageFiles="true"
+        GenerateCommandLineFile="true"
+        AllowPromptForPassword="false">
+    </Settings>
+    <Installer
+        Path="headscaleclient.exe"
+        Arguments=""
+        InstallLocation="C:\Program Files\HeadscaleClient Contributors\HeadscaleClient">
+    </Installer>
+    <PackageInformation
+        PackageName="HeadscaleClient"
+        PackageDisplayName="HeadscaleClient"
+        PublisherName="CN=HeadscaleClient Contributors"
+        PublisherDisplayName="HeadscaleClient Contributors"
+        Version="0.1.0.0"
+        PackageDescription="Cross-platform client for Tailscale-compatible networks">
+        <Capabilities>
+            <Capability Name="runFullTrust" />
+            
+        </Capabilities>
+        <Applications>
+            <Application
+                Id="io.headscaleclient.desktop"
+                Description="Cross-platform client for Tailscale-compatible networks"
+                DisplayName="HeadscaleClient"
+                ExecutableName="headscaleclient.exe"
+                EntryPoint="Windows.FullTrustApplication">
+                
+            </Application>
+        </Applications>
+        <Resources>
+            <Resource Language="en-us" />
+        </Resources>
+        <Dependencies>
+            <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+        </Dependencies>
+        <Properties>
+            <Framework>false</Framework>
+            <DisplayName>HeadscaleClient</DisplayName>
+            <PublisherDisplayName>HeadscaleClient Contributors</PublisherDisplayName>
+            <Description>Cross-platform client for Tailscale-compatible networks</Description>
+            <Logo>Assets\AppIcon.png</Logo>
+        </Properties>
+    </PackageInformation>
+    <SaveLocation PackagePath="headscaleclient.msix" />
+    <PackageIntegrity>
+        <CertificatePath></CertificatePath>
+    </PackageIntegrity>
+</MsixPackagingToolTemplate>

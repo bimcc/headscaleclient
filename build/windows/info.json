@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.1.0"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "0.1.0",
+			"CompanyName": "BIMCC., Ltd.",
+			"FileDescription": "Cross-platform client for Tailscale-compatible networks",
+			"LegalCopyright": "(c) 2026 BIMCC., Ltd.",
+			"ProductName": "HeadscaleClient",
+			"Comments": "Independent client; not affiliated with Tailscale Inc."
+		}
+	}
+}

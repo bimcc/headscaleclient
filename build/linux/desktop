@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=HeadscaleClient
+Comment=Cross-platform client for Tailscale-compatible networks
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/headscaleclient %u
+Terminal=false
+Type=Application
+Icon=headscaleclient
+Categories=Utility;
+StartupWMClass=headscaleclient
+
+ 

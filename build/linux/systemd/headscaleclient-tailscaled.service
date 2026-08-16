@@ -1,0 +1,22 @@
+[Unit]
+Description=HeadscaleClient managed Tailscale node agent
+Documentation=https://tailscale.com/docs/
+Wants=network-pre.target
+After=network-pre.target NetworkManager.service systemd-resolved.service
+
+[Service]
+ExecStart=/usr/lib/headscaleclient/daemon/tailscaled --state=/var/lib/headscaleclient/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
+ExecStopPost=/usr/lib/headscaleclient/daemon/tailscaled --cleanup
+Restart=on-failure
+RestartSec=2s
+RuntimeDirectory=tailscale
+RuntimeDirectoryMode=0755
+StateDirectory=headscaleclient
+StateDirectoryMode=0700
+CacheDirectory=headscaleclient
+CacheDirectoryMode=0750
+Type=notify
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

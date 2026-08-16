@@ -1,0 +1,121 @@
+package tailscale
+
+import (
+	"net/netip"
+	"testing"
+
+	"github.com/headscaleclient/headscaleclient/internal/domain"
+	"tailscale.com/ipn"
+	"tailscale.com/ipn/ipnstate"
+	"tailscale.com/tailcfg"
+)
+
+func TestMapSnapshotNormalizesOfficialControlURL(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name       string
+		controlURL string
+	}{
+		{name: "empty default", controlURL: ""},
+		{name: "legacy login host", controlURL: "https://login.tailscale.com"},
+		{name: "canonical host with case and slash", controlURL: "HTTPS://CONTROLPLANE.TAILSCALE.COM/"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			snapshot := mapSnapshot(
+				&ipnstate.Status{BackendState: "NeedsLogin"},
+				&ipn.Prefs{ControlURL: test.controlURL},
+			)
+			if snapshot.ActiveEndpoint == nil {
+				t.Fatal("active endpoint is nil")
+			}
+			if got := snapshot.ActiveEndpoint.BaseURL; got != ipn.DefaultControlURL {
+				t.Fatalf("active endpoint URL = %q, want %q", got, ipn.DefaultControlURL)
+			}
+			if got := snapshot.ActiveEndpoint.Provider; got != domain.ProviderTailscale {
+				t.Fatalf("active endpoint provider = %q, want %q", got, domain.ProviderTailscale)
+			}
+		})
+	}
+}
+
+func TestMapDeviceProvidesStableDisplayNameFallback(t *testing.T) {
+	t.Parallel()
+
+	fromAddress := mapDevice(&ipnstate.Status{}, &ipnstate.PeerStatus{
+		ID:           tailcfg.StableNodeID("node-address"),
+		TailscaleIPs: []netip.Addr{netip.MustParseAddr("100.64.0.8")},
+	})
+	if fromAddress.Name != "100.64.0.8" {
+		t.Fatalf("address fallback name = %q", fromAddress.Name)
+	}
+
+	fromID := mapDevice(&ipnstate.Status{}, &ipnstate.PeerStatus{ID: tailcfg.StableNodeID("node-id")})
+	if fromID.Name != "node-id" {
+		t.Fatalf("ID fallback name = %q", fromID.Name)
+	}
+}
+
+func TestMapSnapshotHandlesNilStatus(t *testing.T) {
+	t.Parallel()
+
+	snapshot := mapSnapshot(nil, &ipn.Prefs{})
+	if snapshot.State.Daemon != domain.DaemonUnknown {
+		t.Fatalf("daemon state = %q, want %q", snapshot.State.Daemon, domain.DaemonUnknown)
+	}
+	if snapshot.DisplayState != domain.DisplayUnknown {
+		t.Fatalf("display state = %q, want %q", snapshot.DisplayState, domain.DisplayUnknown)
+	}
+	if snapshot.Peers == nil || len(snapshot.Peers) != 0 {
+		t.Fatalf("peers = %#v, want an empty non-nil slice", snapshot.Peers)
+	}
+}
+
+func TestMapProfilePreservesNormalizedControlURL(t *testing.T) {
+	t.Parallel()
+
+	profile := mapProfile(ipn.LoginProfile{
+		ID:         ipn.ProfileID("profile-1"),
+		ControlURL: "https://headscale.example/control/",
+	}, true)
+	if profile.ControlURL != "https://headscale.example/control" {
+		t.Fatalf("profile control URL = %q", profile.ControlURL)
+	}
+	if !profile.Active {
+		t.Fatal("profile was not marked active")
+	}
+
+	official := mapProfile(ipn.LoginProfile{ID: ipn.ProfileID("official")}, false)
+	if official.ControlURL != ipn.DefaultControlURL {
+		t.Fatalf("official profile control URL = %q, want %q", official.ControlURL, ipn.DefaultControlURL)
+	}
+}
+
+func TestMapPeerConnection(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		peer        *ipnstate.PeerStatus
+		connection  domain.PeerConnectionType
+		relayRegion string
+	}{
+		{name: "nil", connection: domain.PeerConnectionOffline},
+		{name: "offline wins over stale route", peer: &ipnstate.PeerStatus{CurAddr: "192.0.2.1:41641", Relay: "hkg"}, connection: domain.PeerConnectionOffline},
+		{name: "direct", peer: &ipnstate.PeerStatus{Online: true, CurAddr: "192.0.2.1:41641", Relay: "hkg"}, connection: domain.PeerConnectionDirect},
+		{name: "derp relay", peer: &ipnstate.PeerStatus{Online: true, Relay: "hkg"}, connection: domain.PeerConnectionRelay, relayRegion: "hkg"},
+		{name: "peer relay", peer: &ipnstate.PeerStatus{Online: true, PeerRelay: "100.64.0.2:1234:vni:1"}, connection: domain.PeerConnectionRelay},
+		{name: "online without route", peer: &ipnstate.PeerStatus{Online: true}, connection: domain.PeerConnectionOffline},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			connection, relayRegion := mapPeerConnection(test.peer)
+			if connection != test.connection || relayRegion != test.relayRegion {
+				t.Fatalf("mapPeerConnection() = (%q, %q), want (%q, %q)", connection, relayRegion, test.connection, test.relayRegion)
+			}
+		})
+	}
+}

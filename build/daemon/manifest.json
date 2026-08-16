@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "version": "1.102.2",
+  "windows": {
+    "amd64": {
+      "url": "https://pkgs.tailscale.com/stable/tailscale-setup-1.102.2-amd64.msi",
+      "sha256": "d2eb69e103b08a5b77de9d7cb8555541aa99f7dfc6048850b2286a1048c885f9",
+      "files": {
+        "tailscale.exe": "9bce6da3e01fa74dfc2aeaed1577c2c3c8901bbdae8222027fa3876e3e09cef5",
+        "tailscaled.exe": "dc1aa013ae85f2e31a2b680977e732e18cf9af31f03d18cf09480f0d48ee5699",
+        "wintun.dll": "e5da8447dc2c320edc0fc52fa01885c103de8c118481f683643cacc3220dafce"
+      }
+    },
+    "arm64": {
+      "url": "https://pkgs.tailscale.com/stable/tailscale-setup-1.102.2-arm64.msi",
+      "sha256": "80be3b1c902a5914ef164052258df80eb2acb1daa5a7c9fd2c1041f7903cf407",
+      "files": {
+        "tailscale.exe": "80ad250b374c2e577b72eabd6a823f0429d5ca1173af708d9af13903e3d509e4",
+        "tailscaled.exe": "d05a609704e22c763b58635303c396472543a3a855ae65d72e0ac763dd8929d4",
+        "wintun.dll": "f7ba89005544be9d85231a9e0d5f23b2d15b3311667e2dad0debd344918a3f80"
+      }
+    }
+  },
+  "linux": {
+    "amd64": {
+      "url": "https://pkgs.tailscale.com/stable/tailscale_1.102.2_amd64.tgz",
+      "sha256": "ad2cde12f8de95f7b93a1e0401e652291c603d42b9d60a33fb1741eb38ab04d8",
+      "files": {
+        "tailscale": "58b0fa0907677ea6afe0d3022cc3e99b1a03f39a7ed60144843ed38252e00c80",
+        "tailscaled": "5f17b092bac92326325f6c4ffd9991fad3c073975abe412d02ee68721a500394"
+      }
+    },
+    "arm64": {
+      "url": "https://pkgs.tailscale.com/stable/tailscale_1.102.2_arm64.tgz",
+      "sha256": "2b64e9ade7e73034b5ec9e9bcd537f5ddd14ae3abb435e57e929e7486ae42660",
+      "files": {
+        "tailscale": "95fcc3e02d149e92f8b9139000e73e1e4cac84de421ee8b49218144b0b4aaceb",
+        "tailscaled": "b05057b0cd33ce0b989d11ef015295ba150e469c4f21b07f355f390e9ed011d5"
+      }
+    }
+  }
+}
