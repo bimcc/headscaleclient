@@ -178,9 +178,10 @@ The peer collection comes only from the active LocalAPI status map. It can
 contain nodes owned by other server users when the control server publishes
 them. The client labels this as visibility, not ownership or authorization;
 Headscale/Tailscale policy and destination filtering remain authoritative.
-Likewise, `ProfileSummary.LoginName` is an opaque login identity. An
-email-shaped value is not treated as proof that an optional Headscale email
-attribute exists.
+Likewise, `ProfileSummary.LoginName` is an opaque login identity to the client.
+Headscale `v0.29.3` currently resolves its username as `Email`, `Name`, OIDC
+provider identifier, then numeric user ID; the client does not reimplement or
+depend on that server-specific precedence.
 
 Non-empty `ipnstate.Status.Health` entries are trimmed and copied through the
 domain and product snapshots. Health entries drive degraded status as before,

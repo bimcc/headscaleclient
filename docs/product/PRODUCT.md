@@ -46,9 +46,10 @@ The name describes the primary self-hosted use case, not a provider lock.
 - Login creates a daemon-owned account profile associated with the selected
   endpoint. Several profiles can remain saved on the device.
 - The profile's login identity is the `LoginName` reported by `tailscaled`.
-  It can be an email address, an OIDC identity, or an ordinary Headscale user
-  name; the client must not infer that an email-shaped value came from an
-  optional server-side email field.
+  Headscale `v0.29.3` derives it from the first available value in `Email`,
+  `Name`, OIDC provider identifier, then numeric user ID. Email is optional,
+  but takes display precedence when present; the client keeps the resulting
+  value as an opaque identity label rather than requiring an email format.
 - The management UI presents this ownership as a master-detail hierarchy:
   saved control servers are the first level, and only the local profiles
   associated with the selected server appear in its account list.
