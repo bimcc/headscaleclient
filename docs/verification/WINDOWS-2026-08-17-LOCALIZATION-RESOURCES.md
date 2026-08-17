@@ -5,7 +5,8 @@
 - Host: Windows AMD64, 12 logical processors.
 - Wails: `v3.0.0-beta.8`.
 - Tailscale module and bundled daemon: `v1.102.2`.
-- Product language values: `zh-CN` and `en-US`; default `zh-CN`.
+- Product language values: `zh-CN` and `en-US`; Windows first launch follows
+  the installer choice, with `zh-CN` as the portable and invalid-value fallback.
 
 ## Automated checks
 
@@ -16,6 +17,8 @@
 - Generated binding surface: 1 service, 14 methods, 19 models, 5 events.
 - Chinese default, immediate English switching, `document.lang`, and English
   tray projection have dedicated tests.
+- Store tests verify that an English installer default initializes missing and
+  legacy language fields while an explicit saved Chinese preference wins.
 
 ## Responsive checks
 
@@ -33,7 +36,10 @@ scroll. The page itself does not scroll horizontally.
 
 The review also confirmed that Overview uses a compact online-device count
 instead of a duplicated peer list, LAN access is disabled until an exit node is
-selected, and the current server/account scope is visible. The selected-server
+selected, and the current server/account scope is visible. The nested LAN row
+uses a smaller `13px` title, `11.5px` description, L-shaped connector, and
+muted disabled state. It had no horizontal overflow in desktop or narrow
+browser checks. The selected-server
 detail places current-network and reachability badges beside the name, removes
 the former status strip, and places its account count in the Accounts header.
 Settings has General and Runtime & diagnostics groups; product and upstream
@@ -59,10 +65,10 @@ settle for eight seconds, sampled over the next ten seconds, and then stopped:
 | Working set | 29.5 MiB |
 | Private memory | 54.5 MiB |
 | CPU delta over 10 seconds | 0.00% of one core |
-| Production frontend JavaScript | 248.52 kB |
-| Production frontend JavaScript, gzip | 77.30 kB |
+| Production frontend JavaScript | 248.68 kB |
+| Production frontend JavaScript, gzip | 77.34 kB |
 | Native executable | 15.62 MiB |
-| Windows installer | 23.77 MiB |
+| Windows installer | 23.78 MiB |
 
 This is a single idle sample on one development machine, not a cross-platform
 performance guarantee. Login, peer churn, active transfer, DERP traffic, and
@@ -71,7 +77,17 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `C79C64F033E7EBE2127CDC5809243D21A78170FE7DF4D2B81E44429B76AA9784`
+- SHA-256: `A673D3ACDC898F2AF0057BF2D1AB5519695BF3B84CD636DADF537592ABF7CD9F`
 - Installer company metadata: `BIMCC., Ltd.`
 - Installer copyright: `(c) 2026 BIMCC., Ltd.`
 - In-app publisher attribution: About view, `BIMCC., Ltd.`
+- NSIS compile result: four installer pages, two installer language tables, and
+  two uninstaller language tables.
+- Setup always presents a bilingual Simplified Chinese/English selector. The
+  selected locale controls built-in pages and custom service messages, writes
+  `DefaultLanguage` for first launch, and leaves the finish-page run checkbox
+  checked by default.
+- `headscaleclient.exe` and the installer both report `NotSigned`. The release
+  task now signs the GUI before packaging and the outer installer afterward,
+  but a publicly trusted Authenticode certificate issued to BIMCC is still
+  required before a trusted artifact can be produced.

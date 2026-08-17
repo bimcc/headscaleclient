@@ -36,9 +36,10 @@ type Configuration struct {
 }
 
 type Store struct {
-	path string
-	now  func() time.Time
-	mu   sync.Mutex
+	path            string
+	now             func() time.Time
+	defaultLanguage domain.Language
+	mu              sync.Mutex
 }
 
 type Option func(*Store) error
@@ -64,8 +65,18 @@ func WithClock(now func() time.Time) Option {
 	}
 }
 
+func WithDefaultLanguage(language domain.Language) Option {
+	return func(store *Store) error {
+		if !language.Valid() {
+			return domain.NewError(domain.ErrorInvalidArgument, "Default application language is invalid.").WithDetail("language")
+		}
+		store.defaultLanguage = language
+		return nil
+	}
+}
+
 func NewStore(options ...Option) (*Store, error) {
-	store := &Store{now: time.Now}
+	store := &Store{now: time.Now, defaultLanguage: domain.LanguageChinese}
 	for _, option := range options {
 		if option == nil {
 			return nil, domain.NewError(domain.ErrorInvalidArgument, "Configuration option cannot be nil.")
@@ -243,7 +254,7 @@ func (s *Store) loadLocked(ctx context.Context) (Configuration, error) {
 		return Configuration{}, domain.NewError(domain.ErrorConfigurationInvalid, "Application configuration is empty.")
 	}
 
-	configuration := Configuration{Settings: domain.DefaultAppSettings()}
+	configuration := Configuration{Settings: s.defaultSettings()}
 	if err := json.Unmarshal(data, &configuration); err != nil {
 		return Configuration{}, domain.WrapError(domain.ErrorConfigurationInvalid, "Application configuration is not valid JSON.", err)
 	}
@@ -260,7 +271,7 @@ func (s *Store) loadLocked(ctx context.Context) (Configuration, error) {
 		configuration.Settings.Theme = domain.ThemeSystem
 	}
 	if configuration.Settings.Language == "" {
-		configuration.Settings.Language = domain.LanguageChinese
+		configuration.Settings.Language = s.defaultLanguage
 	}
 	if configuration.Settings.UpdateChannel == "" {
 		configuration.Settings.UpdateChannel = domain.UpdateStable
@@ -305,8 +316,14 @@ func (s *Store) defaultConfiguration() Configuration {
 	return Configuration{
 		SchemaVersion: CurrentSchemaVersion,
 		Endpoints:     []domain.ControlEndpoint{officialEndpoint(s.now().UTC().Format(time.RFC3339Nano))},
-		Settings:      domain.DefaultAppSettings(),
+		Settings:      s.defaultSettings(),
 	}
+}
+
+func (s *Store) defaultSettings() domain.AppSettings {
+	settings := domain.DefaultAppSettings()
+	settings.Language = s.defaultLanguage
+	return settings
 }
 
 func (s *Store) normalizeLoadedEndpoints(configuration *Configuration) error {

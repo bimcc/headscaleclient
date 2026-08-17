@@ -43,6 +43,66 @@ func TestStoreLoadMissingReturnsDefaultsWithoutWriting(t *testing.T) {
 	}
 }
 
+func TestStoreUsesInstalledDefaultLanguageOnlyWhenLanguageIsMissing(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "config.json")
+	store, err := NewStore(
+		WithPath(path),
+		WithDefaultLanguage(domain.LanguageEnglish),
+	)
+	if err != nil {
+		t.Fatalf("NewStore() error: %v", err)
+	}
+
+	configuration, err := store.Load(context.Background())
+	if err != nil {
+		t.Fatalf("Load(missing) error: %v", err)
+	}
+	if configuration.Settings.Language != domain.LanguageEnglish {
+		t.Fatalf("missing configuration language = %q, want %q", configuration.Settings.Language, domain.LanguageEnglish)
+	}
+
+	legacy := `{
+  "settings": {
+    "theme": "system",
+    "closeToTray": true,
+    "notificationsEnabled": true,
+    "checkForUpdates": true,
+    "updateChannel": "stable"
+  }
+}`
+	if err := os.WriteFile(path, []byte(legacy), 0o600); err != nil {
+		t.Fatalf("WriteFile() error: %v", err)
+	}
+	configuration, err = store.Load(context.Background())
+	if err != nil {
+		t.Fatalf("Load(legacy) error: %v", err)
+	}
+	if configuration.Settings.Language != domain.LanguageEnglish {
+		t.Fatalf("legacy configuration language = %q, want %q", configuration.Settings.Language, domain.LanguageEnglish)
+	}
+
+	configuration.Settings.Language = domain.LanguageChinese
+	if _, err := store.SaveSettings(context.Background(), configuration.Settings); err != nil {
+		t.Fatalf("SaveSettings() error: %v", err)
+	}
+	configuration, err = store.Load(context.Background())
+	if err != nil {
+		t.Fatalf("Load(explicit) error: %v", err)
+	}
+	if configuration.Settings.Language != domain.LanguageChinese {
+		t.Fatalf("explicit language = %q, want %q", configuration.Settings.Language, domain.LanguageChinese)
+	}
+}
+
+func TestStoreRejectsInvalidDefaultLanguage(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewStore(WithDefaultLanguage(domain.Language("fr-FR")))
+	assertErrorCode(t, err, domain.ErrorInvalidArgument)
+}
+
 func TestStoreEndpointLifecyclePersistsNormalizedConfiguration(t *testing.T) {
 	t.Parallel()
 

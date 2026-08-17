@@ -1,4 +1,4 @@
-Unicode true
+﻿Unicode true
 
 ####
 ## Please note: Template replacements don't work in this file. They are provided with default defines like
@@ -60,7 +60,14 @@ ManifestDPIAware true
 !define MUI_UNICON "..\icon.ico"
 # !define MUI_WELCOMEFINISHPAGE_BITMAP "resources\leftimage.bmp" #Include this to add a bitmap on the left side of the Welcome Page. Must be a size of 164x314
 !define MUI_FINISHPAGE_NOAUTOCLOSE # Wait on the INSTFILES page so the user can take a look into the details of the installation steps
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${PRODUCT_EXECUTABLE}"
 !define MUI_ABORTWARNING # This will warn the user if they exit from the installer.
+!define MUI_LANGDLL_ALWAYSSHOW
+!define MUI_LANGDLL_WINDOWTITLE "选择安装语言 / Select Setup Language"
+!define MUI_LANGDLL_INFO "请选择安装语言。 / Please select a language."
+!define MUI_LANGDLL_REGISTRY_ROOT "HKLM"
+!define MUI_LANGDLL_REGISTRY_KEY "${UNINST_KEY}"
+!define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
 
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
 # !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
@@ -70,7 +77,26 @@ ManifestDPIAware true
 
 !insertmacro MUI_UNPAGE_INSTFILES # Uninstalling page
 
-!insertmacro MUI_LANGUAGE "English" # Set the Language of the installer
+!insertmacro MUI_LANGUAGE "SimpChinese"
+!insertmacro MUI_LANGUAGE "English"
+
+LangString WindowsVersionRequired ${LANG_SIMPCHINESE} "本产品仅支持 Windows 10（Server 2016）及更高版本。"
+LangString WindowsVersionRequired ${LANG_ENGLISH} "This product is only supported on Windows 10 (Server 2016) and later."
+LangString ArchitectureNotSupported ${LANG_SIMPCHINESE} "当前 Windows 架构不受支持。支持的架构：${ARCH}"
+LangString ArchitectureNotSupported ${LANG_ENGLISH} "This product can't be installed on the current Windows architecture. Supports: ${ARCH}"
+LangString ServiceInstalling ${LANG_SIMPCHINESE} "正在安装 HeadscaleClient 托管网络服务"
+LangString ServiceInstalling ${LANG_ENGLISH} "Installing the HeadscaleClient managed network service"
+LangString ServiceInstallFailed ${LANG_SIMPCHINESE} "无法安装网络服务（退出代码 $1）。"
+LangString ServiceInstallFailed ${LANG_ENGLISH} "The network service could not be installed (exit code $1)."
+LangString ServiceReusing ${LANG_SIMPCHINESE} "正在复用现有的 Tailscale 网络服务"
+LangString ServiceReusing ${LANG_ENGLISH} "Reusing the existing Tailscale network service"
+LangString ServiceRemoving ${LANG_SIMPCHINESE} "正在移除 HeadscaleClient 托管网络服务"
+LangString ServiceRemoving ${LANG_ENGLISH} "Removing the HeadscaleClient managed network service"
+LangString ServiceLeavingExternal ${LANG_SIMPCHINESE} "保留外部 Tailscale 网络服务，不做更改"
+LangString ServiceLeavingExternal ${LANG_ENGLISH} "Leaving the external Tailscale network service unchanged"
+
+!define WAILS_WIN10_REQUIRED "$(WindowsVersionRequired)"
+!define WAILS_ARCHITECTURE_NOT_SUPPORTED "$(ArchitectureNotSupported)"
 
 ## The following two statements can be used to sign the installer and the uninstaller. The path to the binaries are provided in %1
 #!uninstfinalize 'signtool --file "%1"'
@@ -86,7 +112,12 @@ OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the i
 ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
+   !insertmacro MUI_LANGDLL_DISPLAY
    !insertmacro wails.checkArchitecture
+FunctionEnd
+
+Function un.onInit
+   !insertmacro MUI_UNGETLANGUAGE
 FunctionEnd
 
 Section
@@ -110,17 +141,17 @@ Section
 
     ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Services\Tailscale" "ImagePath"
     ${If} $0 == ""
-        DetailPrint "Installing the HeadscaleClient managed network service"
+        DetailPrint "$(ServiceInstalling)"
         nsExec::ExecToLog '"$INSTDIR\daemon\tailscaled.exe" install-system-daemon'
         Pop $1
         ${If} $1 != 0
-            MessageBox MB_ICONSTOP "The network service could not be installed (exit code $1)."
+            MessageBox MB_ICONSTOP "$(ServiceInstallFailed)"
             Abort
         ${EndIf}
         nsExec::ExecToLog '"$SYSDIR\sc.exe" start Tailscale'
         Pop $1
     ${Else}
-        DetailPrint "Reusing the existing Tailscale network service"
+        DetailPrint "$(ServiceReusing)"
     ${EndIf}
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
@@ -130,6 +161,13 @@ Section
     !insertmacro wails.associateCustomProtocols
     
     !insertmacro wails.writeUninstaller
+
+    SetRegView 64
+    ${If} $LANGUAGE == ${LANG_SIMPCHINESE}
+        WriteRegStr HKLM "${UNINST_KEY}" "DefaultLanguage" "zh-CN"
+    ${Else}
+        WriteRegStr HKLM "${UNINST_KEY}" "DefaultLanguage" "en-US"
+    ${EndIf}
 SectionEnd
 
 Section "uninstall" 
@@ -140,15 +178,15 @@ Section "uninstall"
     ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Services\Tailscale" "ImagePath"
     StrCpy $1 '"$INSTDIR\daemon\tailscaled.exe"'
     ${If} $0 == $1
-        DetailPrint "Removing the HeadscaleClient managed network service"
+        DetailPrint "$(ServiceRemoving)"
         nsExec::ExecToLog '"$INSTDIR\daemon\tailscaled.exe" uninstall-system-daemon'
         Pop $2
     ${ElseIf} $0 == "$INSTDIR\daemon\tailscaled.exe"
-        DetailPrint "Removing the HeadscaleClient managed network service"
+        DetailPrint "$(ServiceRemoving)"
         nsExec::ExecToLog '"$INSTDIR\daemon\tailscaled.exe" uninstall-system-daemon'
         Pop $2
     ${Else}
-        DetailPrint "Leaving the external Tailscale network service unchanged"
+        DetailPrint "$(ServiceLeavingExternal)"
     ${EndIf}
 
     RMDir /r $INSTDIR

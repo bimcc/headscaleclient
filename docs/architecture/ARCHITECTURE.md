@@ -65,8 +65,10 @@ flowchart LR
 ### Configuration store
 
 - Persists schema-versioned, provider-neutral endpoint metadata.
-- Persists the selected `zh-CN` or `en-US` presentation language; `zh-CN` is
-  applied when an older configuration has no language field.
+- Persists the selected `zh-CN` or `en-US` presentation language. On Windows,
+  a missing language is seeded from the installer's 64-bit machine registry
+  value; other builds and invalid or unavailable values fall back to `zh-CN`.
+- Never replaces an explicit saved language with a later installer selection.
 - Uses the operating-system user config directory and atomic replacement.
 - Does not persist auth keys, browser tokens, private node keys, or daemon state.
 
@@ -86,6 +88,8 @@ flowchart LR
   does not expose generic command execution.
 - Platform installers own daemon payload placement, service registration,
   upgrade, and ownership-safe uninstall behavior.
+- The Windows installer owns setup localization and writes only an initial
+  language hint; the user configuration remains authoritative after first use.
 
 ### Daemon distribution
 

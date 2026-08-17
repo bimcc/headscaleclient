@@ -117,9 +117,12 @@ dimensions so state changes do not shift the surrounding layout.
 
 ## Language
 
-- Settings offers Chinese and English, with Chinese selected by default.
+- The Windows installer always asks for Simplified Chinese or English. Its
+  selection localizes setup and becomes the application's initial language.
+- Portable and non-Windows builds use Chinese when no platform default exists.
 - Changes apply immediately to the detailed window and native tray and persist
-  across launches.
+  across launches. A saved preference takes priority over the installer's
+  initial value and is not overwritten on reinstall.
 - User and server data is displayed verbatim; only product-owned interface copy
   is translated.
 - Both languages must pass the desktop and narrow responsive checks.

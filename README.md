@@ -14,7 +14,8 @@ NAT traversal, routing, and DNS remain owned by the upstream daemon.
 - Go `1.26.5`
 - `tailscale.com` `v1.102.2`
 - React + TypeScript
-- Chinese and English interface; Chinese is the default
+- Chinese and English interface; Windows first launch follows the installer
+  language, while portable builds default to Chinese
 - Windows, macOS, and Linux desktop
 
 ## Development prerequisites
@@ -101,7 +102,23 @@ go tool wails3 task package
 
 This produces `bin/headscaleclient-amd64-installer.exe`. The installer reuses a
 compatible existing `Tailscale` service or installs the bundled service on a
-fresh machine. Generated daemon files are not committed to the repository.
+fresh machine. It explicitly asks for Simplified Chinese or English, uses that
+language throughout setup, seeds the same language for the application's first
+launch, and offers a checked run-now option on the finish page. An existing
+in-app language preference is preserved across reinstall. Generated daemon
+files are not committed to the repository.
+
+For a trusted Windows release, configure a public Authenticode certificate
+issued to BIMCC and run:
+
+```powershell
+go tool wails3 task windows:sign:installer SIGN_THUMBPRINT=<certificate-thumbprint> TIMESTAMP_SERVER=<rfc3161-url>
+```
+
+The signed task signs the application before packaging, then signs and
+timestamps the outer installer. Without a publicly trusted certificate,
+Windows correctly reports the current development artifacts as an unknown
+publisher; a self-signed certificate is not a substitute for release signing.
 
 On Linux, create service-bearing packages for the selected architecture:
 

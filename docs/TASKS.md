@@ -79,6 +79,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] UI-019 Remove redundant selected-server metadata and status rows, place
   reachability beside the current-network label, and move account count to the
   Accounts section header.
+- [x] UI-020 Strengthen the exit-node setting hierarchy with a compact nested
+  LAN-access row, connector, and explicit disabled styling.
 
 ## Desktop integration
 
@@ -96,6 +98,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   navigation-event tests are complete; real desktop smoke checks remain.
 - [x] DESK-009 Localize the native tray from the shared snapshot and suppress
   native menu rebuilds when projected state is unchanged.
+- [x] DESK-010 Add an always-visible Simplified Chinese/English installer
+  choice, seed first-launch language without overwriting saved preferences,
+  localize custom setup messages, and enable the checked finish-page run action.
 
 ## Resource efficiency
 
@@ -117,13 +122,15 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] MDE-006 Verify managed-service install, repair, and uninstall on a clean Windows VM.
 - [>] MDE-007 Add independent Linux systemd packages and privilege policy. Runtime lifecycle, verified AMD64/ARM64 payloads, native-package scripts, and CI package inspection are implemented; real systemd host installation remains.
 - [ ] MDE-008 Add signed macOS Network Extension and privileged helper.
-- [ ] MDE-009 Sign the GUI, daemon-bearing installer, and update manifest.
+- [>] MDE-009 Sign the GUI, daemon-bearing installer, and update manifest. The
+  Windows build now signs the GUI before packaging and the outer installer
+  afterward; a public BIMCC Authenticode certificate and update signing remain.
 
 ## Release readiness
 
 - [>] REL-001 Establish supported daemon compatibility matrix. `tailscaled 1.102.2` and Headscale `v0.29.3` are the first verified entries.
 - [ ] REL-002 Add signed update-manifest design and rollback test.
-- [>] REL-003 Configure Windows signing, macOS signing/notarization, Linux packaging. The unsigned Windows machine installer and service-bearing Linux package definitions are implemented; signing, a real Linux build artifact, and macOS remain.
+- [>] REL-003 Configure Windows signing, macOS signing/notarization, Linux packaging. The correct Windows signing order and artifact paths plus service-bearing Linux package definitions are implemented; a trusted certificate, a real Linux build artifact, and macOS remain.
 - [>] REL-004 Complete license notices for Wails, Tailscale, frontend dependencies. Direct dependencies are recorded; transitive release inventory remains.
 - [>] REL-005 Run accessibility, screenshot, integration, and clean-machine checks. Frontend accessibility/responsive checks and Windows native smoke testing are complete.
 
@@ -145,6 +152,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] 2026-08-17 Re-verified Overview, network detail, Settings, About, and
   five-item navigation at 960x680 and 390x844, then rebuilt the Windows AMD64
   installer.
+- [x] 2026-08-17 Verified nested network-setting hierarchy, installer-selected
+  first-launch language, two NSIS language tables, and checked run-now setup;
+  rebuilt the unsigned Windows AMD64 installer and recorded its hash.
 - [ ] Complete a separate-profile interactive login against the test Headscale endpoint.
 - [ ] Complete macOS, real-host Linux, signed installer, and clean-machine matrices.
 

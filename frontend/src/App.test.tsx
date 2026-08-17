@@ -117,10 +117,12 @@ describe("HeadscaleClient shell", () => {
     await screen.findByRole("heading", { name: "服务不可用" });
     const allowLan = screen.getByRole("switch", { name: "允许局域网访问" });
     expect(allowLan).toBeDisabled();
+    expect(allowLan.closest(".setting-row")).toHaveClass("is-nested", "is-disabled");
     expect(screen.getByText("选择出口节点后可用")).toBeInTheDocument();
 
     await user.selectOptions(screen.getByRole("combobox", { name: "出口节点" }), "peer-nas");
     await waitFor(() => expect(allowLan).toBeEnabled());
+    expect(allowLan.closest(".setting-row")).not.toHaveClass("is-disabled");
     expect(screen.getByText("使用出口节点时仍可访问本地网络")).toBeInTheDocument();
   });
 

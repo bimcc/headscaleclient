@@ -22,6 +22,11 @@ signers match the committed manifest. A compatible existing `Tailscale`
 service is reused. Uninstall removes a service only when its executable path
 belongs to the same HeadscaleClient installation.
 
+The Windows installer explicitly selects Simplified Chinese or English,
+localizes setup, stores the selection as a first-launch language hint, and
+offers a checked run-now action on its finish page. Saved application settings
+remain user-owned and are not overwritten during reinstall.
+
 The frontend may invoke only the fixed `EnsureDaemon` operation. It cannot
 provide executable paths, service names, or command arguments.
 
@@ -40,6 +45,9 @@ system service as part of normal launch.
   change rather than an unpinned download.
 - Windows installation and service repair require administrator approval, but
   daily GUI operation does not.
+- Windows release signing requires a publicly trusted Authenticode certificate
+  issued to BIMCC. The build signs the GUI before packaging and the installer
+  afterward; unsigned development packages still show unknown publisher.
 - Linux DEB/RPM/Arch packages can be installed without the official Tailscale
   GUI; real-host install and uninstall matrices remain release verification.
 - macOS requires a signed Network Extension and privileged helper strategy;

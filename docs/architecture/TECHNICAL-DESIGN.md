@@ -116,7 +116,12 @@ must not stop the main window or networking service.
 ## Localization
 
 `AppSettings.Language` is the only language preference. Supported values are
-`zh-CN` and `en-US`; the default and legacy-config fallback are `zh-CN`.
+`zh-CN` and `en-US`. The Windows installer always presents a bilingual language
+selector, stores its selection as `DefaultLanguage` in the 64-bit machine
+uninstall registry key, and localizes its own pages and service messages.
+`config.Store` uses that value only when the configuration or language field is
+missing. Explicit saved preferences survive reinstall. Portable, non-Windows,
+missing, and invalid platform values fall back to `zh-CN`.
 `SetLanguage` persists the preference and returns a new `AppSnapshot`, so the
 React tree, document language, and native tray update from the same state.
 
@@ -163,6 +168,11 @@ Only verified generated files enter `bin/daemon/windows-<arch>/`. NSIS copies
 them to the product's `daemon` directory. The installer creates the service
 only when the `Tailscale` service does not exist. Uninstall compares the actual
 service executable path with the product path before removing it.
+
+The trusted Windows release task signs the GUI before NSIS embeds it and signs
+the resulting installer afterward, timestamping both signatures. A public
+Authenticode certificate issued to BIMCC is an external release prerequisite;
+unsigned development builds intentionally continue to show unknown publisher.
 
 The Linux preparation step accepts only `https://pkgs.tailscale.com`, verifies
 the committed archive SHA-256, verifies the committed SHA-256 for `tailscaled`

@@ -172,29 +172,32 @@ export function OverviewView({
           </div>
         </header>
         <div className="setting-list">
-          <SettingRow
-            title={t("overview.exitNode")}
-            description={t("overview.exitNodeDescription")}
-            control={
-              <select
-                aria-label={t("overview.exitNode")}
-                value={snapshot.preferences.exitNodeId ?? ""}
-                disabled={busy === "exitNode"}
-                onChange={(event) => onExitNodeChange(event.target.value || null)}
-              >
-                <option value="">{t("overview.doNotUse")}</option>
-                {snapshot.devices.filter((device) => device.online && device.exitNodeOption).map((device) => (
-                  <option key={device.id} value={device.id}>{device.name}</option>
-                ))}
-              </select>
-            }
-          />
-          <SettingRow
-            title={t("overview.allowLAN")}
-            description={snapshot.preferences.exitNodeId ? t("overview.allowLANDescription") : t("overview.allowLANRequiresExitNode")}
-            nested
-            control={<Toggle label={t("overview.allowLAN")} checked={snapshot.preferences.allowLanAccess} disabled={busy === "allowLanAccess" || !snapshot.preferences.exitNodeId} onChange={(value) => onPreferenceChange("allowLanAccess", value)} />}
-          />
+          <div className="setting-group">
+            <SettingRow
+              title={t("overview.exitNode")}
+              description={t("overview.exitNodeDescription")}
+              control={
+                <select
+                  aria-label={t("overview.exitNode")}
+                  value={snapshot.preferences.exitNodeId ?? ""}
+                  disabled={busy === "exitNode"}
+                  onChange={(event) => onExitNodeChange(event.target.value || null)}
+                >
+                  <option value="">{t("overview.doNotUse")}</option>
+                  {snapshot.devices.filter((device) => device.online && device.exitNodeOption).map((device) => (
+                    <option key={device.id} value={device.id}>{device.name}</option>
+                  ))}
+                </select>
+              }
+            />
+            <SettingRow
+              title={t("overview.allowLAN")}
+              description={snapshot.preferences.exitNodeId ? t("overview.allowLANDescription") : t("overview.allowLANRequiresExitNode")}
+              nested
+              disabled={!snapshot.preferences.exitNodeId}
+              control={<Toggle label={t("overview.allowLAN")} checked={snapshot.preferences.allowLanAccess} disabled={busy === "allowLanAccess" || !snapshot.preferences.exitNodeId} onChange={(value) => onPreferenceChange("allowLanAccess", value)} />}
+            />
+          </div>
           <SettingRow
             title={t("overview.magicDNS")}
             description={t("overview.magicDNSDescription")}

@@ -61,14 +61,19 @@ export function SettingRow({
   description,
   control,
   nested = false,
+  disabled = false,
 }: {
   title: string;
   description?: string;
   control: ReactNode;
   nested?: boolean;
+  disabled?: boolean;
 }) {
   return (
-    <div className={`setting-row${nested ? " is-nested" : ""}`}>
+    <div
+      className={`setting-row${nested ? " is-nested" : ""}${disabled ? " is-disabled" : ""}`}
+      aria-disabled={disabled || undefined}
+    >
       <div className="setting-copy">
         <span className="setting-title">{title}</span>
         {description && <span className="setting-description">{description}</span>}

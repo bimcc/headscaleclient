@@ -41,7 +41,9 @@ func init() {
 }
 
 func main() {
-	store, err := config.NewStore()
+	store, err := config.NewStore(
+		config.WithDefaultLanguage(config.InstalledDefaultLanguage()),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
