@@ -178,6 +178,10 @@ function LogoutDialog({
         <p>
           {t("profile.logoutConfirm", { name: profile.displayName, endpoint: endpointName })}
         </p>
+        <div className="identity-removal-warning">
+          <AlertTriangle aria-hidden="true" size={18} />
+          <p>{t("profile.logoutReauth")}</p>
+        </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="form-actions">
           <button className="button secondary" type="button" disabled={busy} onClick={onClose}>{t("common.cancel")}</button>
@@ -403,6 +407,7 @@ export function NetworksView({
               <ShieldCheck aria-hidden="true" size={21} />
               <div className="truncate">
                 <strong>{t("endpoint.loginReady", { name: selectedEndpoint.name })}</strong>
+                <span>{t("endpoint.loginInstructions")}</span>
                 <span className="truncate" title={loginState.authUrl}>{loginState.authUrl}</span>
               </div>
               <button className="button secondary with-icon" type="button" onClick={() => void onOpenURL(loginState.authUrl)}>

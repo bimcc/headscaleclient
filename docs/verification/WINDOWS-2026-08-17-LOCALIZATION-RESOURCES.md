@@ -118,7 +118,7 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `0EE1AB759D7460402E3F7BBFDBE83201018EF13FBB342C30E1FFA0D2F94C38A5`
+- SHA-256: `969B5D3196881977DC042E633C98B8FAE18F610A5B13306F0A95A3A32107BEF9`
 - Default machine installation directory: `C:\Program Files\BIMCC\HeadscaleClient`
 - A registered installation produces a localized update-or-repair confirmation;
   cancelling exits setup, while continuing preserves product configuration.
@@ -128,7 +128,9 @@ daemon resource usage were not included.
 - A recognized managed service is stopped before its payload is replaced,
   re-registered afterward, and required to start successfully. Service-control
   output is kept out of the setup details; Windows code `1056` produces the
-  localized already-running status, while other non-zero results remain fatal.
+  localized already-running status. Windows code `1068` names the four official
+  Tailscale service dependencies and directs the user to check for a disabled
+  dependency; other non-zero results remain fatal.
 - Installer company metadata: `BIMCC., Ltd.`
 - Installer copyright: `(c) 2026 BIMCC., Ltd.`
 - In-app publisher attribution: About view, `BIMCC., Ltd.`

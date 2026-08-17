@@ -76,6 +76,7 @@ describe("NetworksView", () => {
     expect(props.onOpenURL).toHaveBeenCalledWith("https://login.example.com/device");
     expect(screen.queryByText("未检查")).not.toBeInTheDocument();
     expect(screen.getByText("登录时检查")).toBeInTheDocument();
+    expect(screen.getByText(/未配置 OIDC 的 Headscale 会要求管理员批准/)).toBeInTheDocument();
   });
 
   it("shows only accounts associated with the selected server", async () => {
@@ -112,18 +113,20 @@ describe("NetworksView", () => {
     expect(screen.getByRole("heading", { name: "团队 Headscale" })).toBeInTheDocument();
   });
 
-  it("requires confirmation before logging out the active profile", async () => {
+  it("explains reauthentication before removing the active local identity", async () => {
     const user = userEvent.setup();
     const onLogout = vi.fn(async () => undefined);
     renderView({ onLogout });
 
     const profileRow = screen.getByText("个人网络").closest(".profile-row");
     expect(profileRow).not.toBeNull();
-    await user.click(within(profileRow as HTMLElement).getByRole("button", { name: "注销" }));
+    await user.click(within(profileRow as HTMLElement).getByRole("button", { name: "移除身份" }));
 
     expect(onLogout).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog", { name: "注销当前账号" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "确认注销" }));
+    expect(screen.getByRole("dialog", { name: "移除本机登录身份" })).toBeInTheDocument();
+    expect(screen.getByText(/下次连接必须重新打开浏览器认证/)).toBeInTheDocument();
+    expect(screen.getByText(/若只想暂时停用网络/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "确认移除" }));
 
     await waitFor(() => expect(onLogout).toHaveBeenCalledTimes(1));
   });

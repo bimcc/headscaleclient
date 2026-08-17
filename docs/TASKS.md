@@ -100,6 +100,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] UI-026 Classify daemon health output into warnings and configuration
   notices, localize the known accept-routes notice, and keep informational
   notices from degrading a healthy connection.
+- [x] UI-027 Distinguish temporary disconnection from destructive local-identity
+  removal and explain browser authentication and non-OIDC approval during login.
 
 ## Desktop integration
 
@@ -122,6 +124,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   localize custom setup messages, and enable the checked finish-page run action.
 - [x] DESK-011 Hide raw Windows service-control output during setup and present
   localized started, already-running, and genuine failure states.
+- [x] DESK-012 Diagnose Windows service dependency error 1068 with the exact
+  upstream Tailscale dependency set instead of suggesting a process conflict.
 
 ## Resource efficiency
 

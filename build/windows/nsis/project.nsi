@@ -102,6 +102,8 @@ LangString ServiceMigrationFailed ${LANG_SIMPCHINESE} "无法迁移旧版网络�
 LangString ServiceMigrationFailed ${LANG_ENGLISH} "The previous network service could not be migrated (exit code $1). Uninstall the previous version and try again."
 LangString ServiceStartFailed ${LANG_SIMPCHINESE} "网络服务未能启动（退出代码 $1）。请关闭手工运行的 tailscaled.exe 后重试。"
 LangString ServiceStartFailed ${LANG_ENGLISH} "The network service could not be started (exit code $1). Close any manually started tailscaled.exe process and try again."
+LangString ServiceDependencyFailed ${LANG_SIMPCHINESE} "Windows 无法启动 Tailscale 所需的系统服务（错误 1068）。请确认 DNS Client (Dnscache)、IP Helper (iphlpsvc)、Network List Service (netprofm) 和 WinHTTP Web Proxy Auto-Discovery Service (WinHttpAutoProxySvc) 未被禁用，然后重新运行安装程序。"
+LangString ServiceDependencyFailed ${LANG_ENGLISH} "Windows could not start a system service required by Tailscale (error 1068). Ensure DNS Client (Dnscache), IP Helper (iphlpsvc), Network List Service (netprofm), and WinHTTP Web Proxy Auto-Discovery Service (WinHttpAutoProxySvc) are not disabled, then run setup again."
 LangString ServiceStarting ${LANG_SIMPCHINESE} "正在确认 Tailscale 网络服务状态"
 LangString ServiceStarting ${LANG_ENGLISH} "Checking the Tailscale network service"
 LangString ServiceStarted ${LANG_SIMPCHINESE} "Tailscale 网络服务已启动"
@@ -218,6 +220,9 @@ Section
         DetailPrint "$(ServiceStarted)"
     ${ElseIf} $1 == 1056
         DetailPrint "$(ServiceAlreadyRunning)"
+    ${ElseIf} $1 == 1068
+        MessageBox MB_ICONSTOP "$(ServiceDependencyFailed)"
+        Abort
     ${Else}
         MessageBox MB_ICONSTOP "$(ServiceStartFailed)"
         Abort

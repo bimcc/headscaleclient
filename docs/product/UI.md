@@ -47,8 +47,16 @@ The Networks view separates two related lists:
   endpoint is the daemon's active target. Inactive rows show `Not logged in` or
   their saved account count; they do not claim to have been probed.
 - Accounts show the endpoint association and authentication state. The active
-  row exposes logout, while inactive rows expose switch. Logout requires a
-  confirmation because it disconnects and removes the active daemon profile.
+  row exposes `Remove identity`, while inactive rows expose switch. Removal is
+  deliberately distinguished from temporarily disconnecting: its confirmation
+  states that the daemon profile is deleted, the next connection requires
+  browser authentication, and Headscale without OIDC also requires administrator
+  approval. Temporary disconnection remains the Overview connection switch.
+
+After an interactive login starts, the view explains that authentication is
+completed in the browser and that non-OIDC Headscale deployments use an
+administrator-approval page. Approval completion is still observed through the
+daemon event stream, so no manual refresh is required.
 
 The view always states that multiple accounts may be saved while only one
 network can be active.

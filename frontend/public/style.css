@@ -1744,6 +1744,26 @@ select {
   line-height: 1.5;
 }
 
+.identity-removal-warning {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-left: 3px solid var(--amber);
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.identity-removal-warning svg {
+  margin-top: 2px;
+}
+
+.identity-removal-warning p {
+  color: var(--text);
+  font-size: 12.5px;
+}
+
 .settings-view {
   max-width: 880px;
 }
