@@ -41,6 +41,12 @@ export interface RuntimeState {
   control: ControlState;
 }
 
+export interface HealthNotice {
+  code: "routes-not-accepted" | "tailscale-warning";
+  severity: "info" | "warning";
+  message: string;
+}
+
 export interface LocalDevice {
   id: string;
   name: string;
@@ -126,7 +132,7 @@ export interface AppSnapshot {
   source: "native" | "demo";
   fallbackReason?: string;
   runtime: RuntimeState;
-  healthWarnings: string[];
+  healthNotices: HealthNotice[];
   localDevice: LocalDevice;
   devices: PeerDevice[];
   endpoints: Endpoint[];

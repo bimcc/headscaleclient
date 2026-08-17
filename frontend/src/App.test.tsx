@@ -308,7 +308,11 @@ describe("HeadscaleClient shell", () => {
     degraded.runtime.daemon = "ready";
     degraded.runtime.connection = "degraded";
     degraded.runtime.control = "reachable";
-    degraded.healthWarnings = ["UDP is unavailable; peers may use DERP relays."];
+    degraded.healthNotices = [{
+      code: "tailscale-warning",
+      severity: "warning",
+      message: "UDP is unavailable; peers may use DERP relays.",
+    }];
     vi.spyOn(backend, "getSnapshot").mockResolvedValue(degraded);
 
     render(<App backendClient={backend} />);
@@ -319,6 +323,29 @@ describe("HeadscaleClient shell", () => {
     expect(screen.getByText("UDP is unavailable; peers may use DERP relays.")).toBeInTheDocument();
     expect(screen.queryByText("控制服务器暂时不可达")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "断开连接" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("shows disabled accept-routes as localized information without degrading the tunnel", async () => {
+    const backend = createBackend();
+    const snapshot = createDemoSnapshot();
+    snapshot.runtime.daemon = "ready";
+    snapshot.runtime.connection = "running";
+    snapshot.runtime.control = "reachable";
+    snapshot.preferences.acceptRoutes = false;
+    snapshot.healthNotices = [{
+      code: "routes-not-accepted",
+      severity: "info",
+      message: "Some peers are advertising routes but --accept-routes is false",
+    }];
+    vi.spyOn(backend, "getSnapshot").mockResolvedValue(snapshot);
+
+    render(<App backendClient={backend} />);
+
+    expect(await screen.findByRole("heading", { name: "已连接" })).toBeInTheDocument();
+    expect(screen.getByText("隧道运行正常")).toBeInTheDocument();
+    expect(screen.getByText("网络配置提示（1）")).toBeInTheDocument();
+    expect(screen.getByText(/其他设备发布了子网路由/)).toBeInTheDocument();
+    expect(screen.queryByText("Some peers are advertising routes but --accept-routes is false")).not.toBeInTheDocument();
   });
 
   it("edits and deletes a custom control server", async () => {

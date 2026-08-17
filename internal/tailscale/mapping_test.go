@@ -79,8 +79,24 @@ func TestMapSnapshotPreservesHealthWarningDetails(t *testing.T) {
 		BackendState: "Running",
 		Health:       []string{" UDP is unavailable; using relays. ", ""},
 	}, &ipn.Prefs{})
-	if len(snapshot.HealthWarnings) != 1 || snapshot.HealthWarnings[0] != "UDP is unavailable; using relays." {
-		t.Fatalf("health warnings = %#v", snapshot.HealthWarnings)
+	if len(snapshot.HealthNotices) != 1 ||
+		snapshot.HealthNotices[0].Code != domain.HealthNoticeTailscaleWarning ||
+		snapshot.HealthNotices[0].Severity != domain.HealthNoticeWarning ||
+		snapshot.HealthNotices[0].Message != "UDP is unavailable; using relays." {
+		t.Fatalf("health notices = %#v", snapshot.HealthNotices)
+	}
+}
+
+func TestMapSnapshotClassifiesDisabledAcceptRoutesAsInformation(t *testing.T) {
+	t.Parallel()
+
+	message := "Some peers are advertising routes but --accept-routes is false"
+	snapshot := mapSnapshot(&ipnstate.Status{BackendState: "Running", Health: []string{message}}, &ipn.Prefs{})
+	if len(snapshot.HealthNotices) != 1 ||
+		snapshot.HealthNotices[0].Code != domain.HealthNoticeRoutesNotAccepted ||
+		snapshot.HealthNotices[0].Severity != domain.HealthNoticeInfo ||
+		snapshot.HealthNotices[0].Message != message {
+		t.Fatalf("health notices = %#v", snapshot.HealthNotices)
 	}
 }
 

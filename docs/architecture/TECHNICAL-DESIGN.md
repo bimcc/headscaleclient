@@ -155,7 +155,7 @@ and server-supplied diagnostic details are data and are never translated.
 - daemon state and version
 - daemon ownership, service state, bundled version, and available fixed actions
 - session and connection state
-- current daemon health-warning details
+- current structured daemon health notices
 - active control server and profile
 - local device identity and addresses
 - peer summaries
@@ -183,10 +183,17 @@ Headscale `v0.29.3` currently resolves its username as `Email`, `Name`, OIDC
 provider identifier, then numeric user ID; the client does not reimplement or
 depend on that server-specific precedence.
 
-Non-empty `ipnstate.Status.Health` entries are trimmed and copied through the
-domain and product snapshots. Health entries drive degraded status as before,
-but the frontend also renders their exact text so a transient warning is
-diagnosable instead of being reduced to a boolean.
+Non-empty `ipnstate.Status.Health` entries are trimmed and classified into
+structured notices containing a stable product code, severity, and the exact
+upstream message. A notice classified as `warning` drives degraded status. The
+known `routes-not-accepted` condition is informational because it means
+advertised subnet routes are intentionally ignored; it does not imply that the
+overlay tunnel or virtual-address connectivity is unhealthy.
+
+The frontend localizes messages for known stable codes, including
+`routes-not-accepted`, while preserving the exact daemon text in diagnostics
+and element metadata. Unknown upstream messages retain their original text and
+warning severity so a new daemon condition is never hidden or mistranslated.
 
 ## Managed daemon supply chain
 

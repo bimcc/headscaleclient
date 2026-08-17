@@ -91,10 +91,18 @@ reported owner explicitly. Account-facing labels use `sign-in identity` where
 the value is a daemon `LoginName`, because it may be a username or an email
 address.
 
-When `tailscaled` reports health warnings, Overview shows the exact current
-warning text beneath the compact connection row and includes it in copied
-diagnostics. The summary badge reports the warning count; it no longer leaves
-the user with only a generic local-network warning.
+When `tailscaled` reports health notices, Overview separates actionable health
+warnings from informational configuration notices. Warnings use the amber
+panel, affect the connection summary, and remain in copied diagnostics. Known
+notices use localized product copy in the selected language; for example,
+`routes-not-accepted` explains that advertised subnet routes are ignored while
+ordinary virtual-address connections remain available. It uses a quiet teal
+panel and does not degrade an otherwise healthy connection.
+
+The exact upstream message remains available in copied diagnostics and element
+metadata. Unrecognized messages stay in the warning panel with their original
+text rather than receiving an unsafe guessed translation. Summary warning
+counts exclude informational notices.
 
 ## Device paths
 

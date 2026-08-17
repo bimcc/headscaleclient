@@ -22,6 +22,7 @@ func TestMapState(t *testing.T) {
 		{name: "login", status: ipnstate.Status{BackendState: "NeedsLogin"}, daemon: domain.DaemonReady, session: domain.SessionLoginRequired, conn: domain.ConnectionStopped, display: domain.DisplayLoginRequired},
 		{name: "approval", status: ipnstate.Status{BackendState: "NeedsMachineAuth"}, daemon: domain.DaemonReady, session: domain.SessionApprovalRequired, conn: domain.ConnectionStopped, display: domain.DisplayWaitingForApproval},
 		{name: "running", status: ipnstate.Status{BackendState: "Running"}, daemon: domain.DaemonReady, session: domain.SessionAuthenticated, conn: domain.ConnectionRunning, display: domain.DisplayConnected},
+		{name: "route information", status: ipnstate.Status{BackendState: "Running", Health: []string{"Some peers are advertising routes but --accept-routes is false"}}, daemon: domain.DaemonReady, session: domain.SessionAuthenticated, conn: domain.ConnectionRunning, display: domain.DisplayConnected},
 		{name: "degraded", status: ipnstate.Status{BackendState: "Running", Health: []string{"control server unreachable"}}, daemon: domain.DaemonReady, session: domain.SessionAuthenticated, conn: domain.ConnectionDegraded, display: domain.DisplayLimitedConnectivity},
 	}
 	for _, test := range tests {

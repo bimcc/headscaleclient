@@ -37,7 +37,7 @@ const demoSnapshot: AppSnapshot = {
     connection: "stopped",
     control: "reachable",
   },
-  healthWarnings: [],
+  healthNotices: [],
   localDevice: {
     id: "local-mbp",
     name: "studio-mbp",

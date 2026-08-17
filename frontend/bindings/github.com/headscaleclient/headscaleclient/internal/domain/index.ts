@@ -8,11 +8,14 @@ export {
     EngineOwnership,
     EngineServiceState,
     ErrorCode,
+    HealthNoticeCode,
+    HealthNoticeSeverity,
     Language,
     SessionState,
     Theme
 } from "./models.js";
 
 export type {
+    HealthNotice,
     Problem
 } from "./models.js";

@@ -151,21 +151,21 @@ type EngineStatus struct {
 // AppSnapshot deliberately mirrors frontend/src/lib/contracts.ts. Upstream
 // Tailscale types must not cross this boundary.
 type AppSnapshot struct {
-	Source           SnapshotSource   `json:"source"`
-	FallbackReason   string           `json:"fallbackReason,omitempty"`
-	Runtime          RuntimeState     `json:"runtime"`
-	HealthWarnings   []string         `json:"healthWarnings"`
-	LocalDevice      LocalDevice      `json:"localDevice"`
-	Devices          []PeerDevice     `json:"devices"`
-	Endpoints        []Endpoint       `json:"endpoints"`
-	Profiles         []LoginProfile   `json:"profiles"`
-	ActiveEndpointID *string          `json:"activeEndpointId"`
-	ActiveProfileID  *string          `json:"activeProfileId"`
-	Preferences      QuickPreferences `json:"preferences"`
-	Settings         AppSettings      `json:"settings"`
-	Diagnostics      Diagnostics      `json:"diagnostics"`
-	Engine           EngineStatus     `json:"engine"`
-	UpdatedAt        string           `json:"updatedAt"`
+	Source           SnapshotSource        `json:"source"`
+	FallbackReason   string                `json:"fallbackReason,omitempty"`
+	Runtime          RuntimeState          `json:"runtime"`
+	HealthNotices    []domain.HealthNotice `json:"healthNotices"`
+	LocalDevice      LocalDevice           `json:"localDevice"`
+	Devices          []PeerDevice          `json:"devices"`
+	Endpoints        []Endpoint            `json:"endpoints"`
+	Profiles         []LoginProfile        `json:"profiles"`
+	ActiveEndpointID *string               `json:"activeEndpointId"`
+	ActiveProfileID  *string               `json:"activeProfileId"`
+	Preferences      QuickPreferences      `json:"preferences"`
+	Settings         AppSettings           `json:"settings"`
+	Diagnostics      Diagnostics           `json:"diagnostics"`
+	Engine           EngineStatus          `json:"engine"`
+	UpdatedAt        string                `json:"updatedAt"`
 }
 
 type EndpointInput struct {

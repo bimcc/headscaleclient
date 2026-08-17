@@ -252,12 +252,12 @@ func mapSnapshot(status *ipnstate.Status, prefs *ipn.Prefs) domain.AppSnapshot {
 		peerCount = len(status.Peer)
 	}
 	snapshot := domain.AppSnapshot{
-		State:          state,
-		DisplayState:   domain.DeriveDisplayState(state),
-		HealthWarnings: []string{},
-		DaemonVersion:  daemonVersion,
-		Peers:          make([]domain.PeerSummary, 0, peerCount),
-		Preferences:    mapPreferences(prefs),
+		State:         state,
+		DisplayState:  domain.DeriveDisplayState(state),
+		HealthNotices: []domain.HealthNotice{},
+		DaemonVersion: daemonVersion,
+		Peers:         make([]domain.PeerSummary, 0, peerCount),
+		Preferences:   mapPreferences(prefs),
 		Capabilities: domain.Capabilities{
 			ExitNode:     domain.CapabilitySupported,
 			LANAccess:    domain.CapabilitySupported,
@@ -292,9 +292,9 @@ func mapSnapshot(status *ipnstate.Status, prefs *ipn.Prefs) domain.AppSnapshot {
 	if status == nil {
 		return snapshot
 	}
-	for _, warning := range status.Health {
-		if warning = strings.TrimSpace(warning); warning != "" {
-			snapshot.HealthWarnings = append(snapshot.HealthWarnings, warning)
+	for _, message := range status.Health {
+		if notice, ok := mapHealthNotice(message); ok {
+			snapshot.HealthNotices = append(snapshot.HealthNotices, notice)
 		}
 	}
 	for _, peer := range status.Peer {
@@ -363,17 +363,42 @@ func mapState(status *ipnstate.Status) domain.StateAxes {
 	default:
 		state.Daemon = domain.DaemonIncompatible
 	}
-	if len(status.Health) > 0 && state.Connection == domain.ConnectionRunning {
-		state.Connection = domain.ConnectionDegraded
-		for _, warning := range status.Health {
-			lower := strings.ToLower(warning)
+	if state.Connection == domain.ConnectionRunning {
+		for _, message := range status.Health {
+			notice, ok := mapHealthNotice(message)
+			if !ok || notice.Severity != domain.HealthNoticeWarning {
+				continue
+			}
+			state.Connection = domain.ConnectionDegraded
+			lower := strings.ToLower(notice.Message)
 			if strings.Contains(lower, "control") || strings.Contains(lower, "map response") {
 				state.Control = domain.ControlUnreachable
-				break
 			}
 		}
 	}
 	return state
+}
+
+func mapHealthNotice(message string) (domain.HealthNotice, bool) {
+	message = strings.TrimSpace(message)
+	if message == "" {
+		return domain.HealthNotice{}, false
+	}
+	lower := strings.ToLower(message)
+	if strings.Contains(lower, "advertising routes") &&
+		strings.Contains(lower, "--accept-routes") &&
+		strings.Contains(lower, "false") {
+		return domain.HealthNotice{
+			Code:     domain.HealthNoticeRoutesNotAccepted,
+			Severity: domain.HealthNoticeInfo,
+			Message:  message,
+		}, true
+	}
+	return domain.HealthNotice{
+		Code:     domain.HealthNoticeTailscaleWarning,
+		Severity: domain.HealthNoticeWarning,
+		Message:  message,
+	}, true
 }
 
 func mapDevice(status *ipnstate.Status, peer *ipnstate.PeerStatus) domain.DeviceIdentity {

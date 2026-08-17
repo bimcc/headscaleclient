@@ -631,6 +631,7 @@ p {
 }
 
 .persistent-alert,
+.persistent-notice,
 .login-flow {
   display: flex;
   align-items: center;
@@ -643,7 +644,14 @@ p {
   color: var(--amber);
 }
 
+.persistent-notice {
+  border-left-color: var(--accent-strong);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .persistent-alert > div,
+.persistent-notice > div,
 .login-flow > div {
   display: flex;
   flex-direction: column;
@@ -655,14 +663,28 @@ p {
   flex: 1;
 }
 
+.persistent-notice > div {
+  flex: 1;
+}
+
 .daemon-action {
   flex: 0 0 auto;
 }
 
 .persistent-alert span,
+.persistent-notice span,
 .login-flow span {
   font-size: 12.5px;
   line-height: 1.4;
+}
+
+.health-notice-list {
+  margin: 3px 0 0;
+  padding: 0;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.45;
+  list-style: none;
 }
 
 .health-warning-list {
@@ -2210,6 +2232,12 @@ select {
   }
 
   .persistent-alert {
+    display: grid;
+    grid-template-columns: 19px minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .persistent-notice {
     display: grid;
     grid-template-columns: 19px minmax(0, 1fr);
     align-items: flex-start;

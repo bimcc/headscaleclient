@@ -69,6 +69,26 @@ const (
 	PeerConnectionUnknown PeerConnectionType = "unknown"
 )
 
+type HealthNoticeSeverity string
+
+const (
+	HealthNoticeInfo    HealthNoticeSeverity = "info"
+	HealthNoticeWarning HealthNoticeSeverity = "warning"
+)
+
+type HealthNoticeCode string
+
+const (
+	HealthNoticeRoutesNotAccepted HealthNoticeCode = "routes-not-accepted"
+	HealthNoticeTailscaleWarning  HealthNoticeCode = "tailscale-warning"
+)
+
+type HealthNotice struct {
+	Code     HealthNoticeCode     `json:"code"`
+	Severity HealthNoticeSeverity `json:"severity"`
+	Message  string               `json:"message"`
+}
+
 type Preferences struct {
 	WantRunning            bool   `json:"wantRunning"`
 	CorpDNS                bool   `json:"corpDNS"`
@@ -93,7 +113,7 @@ type AppSnapshot struct {
 	Sequence       uint64           `json:"sequence"`
 	State          StateAxes        `json:"state"`
 	DisplayState   DisplayState     `json:"displayState"`
-	HealthWarnings []string         `json:"healthWarnings"`
+	HealthNotices  []HealthNotice   `json:"healthNotices"`
 	DaemonVersion  string           `json:"daemonVersion,omitempty"`
 	ActiveEndpoint *EndpointSummary `json:"activeEndpoint,omitempty"`
 	ActiveProfile  *ProfileSummary  `json:"activeProfile,omitempty"`

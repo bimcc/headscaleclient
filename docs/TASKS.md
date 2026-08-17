@@ -97,6 +97,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   as disabled options, and make stale selections recoverable.
 - [x] UI-025 Make Escape close the header identity menu even before its deferred
   focus transfer completes.
+- [x] UI-026 Classify daemon health output into warnings and configuration
+  notices, localize the known accept-routes notice, and keep informational
+  notices from degrading a healthy connection.
 
 ## Desktop integration
 

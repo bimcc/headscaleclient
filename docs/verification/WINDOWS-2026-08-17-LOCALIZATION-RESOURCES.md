@@ -12,9 +12,9 @@
 
 - `go test ./...`: passed.
 - `go vet ./...`: passed.
-- Frontend Vitest: 59 tests passed.
+- Frontend Vitest: 60 tests passed.
 - Frontend TypeScript and production build: passed.
-- Generated binding surface: 1 service, 14 methods, 19 models, 5 events.
+- Generated binding surface: 1 service, 14 methods, 20 models, 5 events.
 - Chinese default, immediate English switching, `document.lang`, and English
   tray projection have dedicated tests.
 - Store tests verify that an English installer default initializes missing and
@@ -30,9 +30,12 @@
 - Windows lifecycle tests cover current, legacy-managed, and official external
   executable ownership. Application tests verify that service success waits
   for LocalAPI readiness and that selecting an exit node enables LAN access.
-- Snapshot tests verify that exact non-empty daemon health warnings survive the
-  LocalAPI, domain, application, binding, and frontend boundary. Frontend tests
-  cover warning detail rendering and the no-approved-exit-node state.
+- Snapshot tests verify that non-empty daemon health messages are classified as
+  structured warning or informational notices across the LocalAPI, domain,
+  application, binding, and frontend boundary. The known
+  `routes-not-accepted` condition remains connected, renders localized product
+  copy, and retains its exact upstream text for diagnostics. Frontend tests
+  also cover warning detail rendering and the no-approved-exit-node state.
 
 ## Responsive checks
 
@@ -75,10 +78,10 @@ the recent-path label and a DERP probe result remained inside the drawer with no
 document overflow.
 
 The visible-device scope notice, explicit owner labels, exact health-warning
-panel, and no-approved-exit-node description were checked at `960 x 680` and
-`390 x 844`. Document width matched viewport width in all cases. Approved
-offline exit nodes remain visible but disabled; stale selected nodes remain
-identifiable and can be cleared.
+panel, localized route-configuration notice, and no-approved-exit-node
+description were checked at `960 x 680` and `390 x 844`. Document width matched
+viewport width in all cases. Approved offline exit nodes remain visible but
+disabled; stale selected nodes remain identifiable and can be cleared.
 
 ## Resource review
 
@@ -103,8 +106,8 @@ settle for eight seconds, sampled over the next ten seconds, and then stopped:
 | Working set | 29.5 MiB |
 | Private memory | 54.5 MiB |
 | CPU delta over 10 seconds | 0.00% of one core |
-| Production frontend JavaScript | 255.03 kB |
-| Production frontend JavaScript, gzip | 78.90 kB |
+| Production frontend JavaScript | 256.17 kB |
+| Production frontend JavaScript, gzip | 79.19 kB |
 | Native executable | 15.65 MiB |
 | Windows installer | 23.79 MiB |
 
@@ -115,7 +118,7 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `15065247201496C6749E9B97CD24CDD65B09D908B3400950571A9D3E67D3478A`
+- SHA-256: `ADCCA148CF07FC6EA00CD18FE6B6777D2D690130D4D4C090B2A0EF6F2542BBBF`
 - Default machine installation directory: `C:\Program Files\BIMCC\HeadscaleClient`
 - A registered installation produces a localized update-or-repair confirmation;
   cancelling exits setup, while continuing preserves product configuration.

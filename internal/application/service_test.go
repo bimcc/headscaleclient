@@ -227,19 +227,23 @@ func TestGetSnapshotPreservesPeerConnectionMetadata(t *testing.T) {
 	}
 }
 
-func TestGetSnapshotPreservesDaemonHealthWarnings(t *testing.T) {
+func TestGetSnapshotPreservesDaemonHealthNotices(t *testing.T) {
 	t.Parallel()
 
 	raw := healthyDomainSnapshot()
-	raw.HealthWarnings = []string{"DNS configuration is unavailable."}
+	raw.HealthNotices = []domain.HealthNotice{{
+		Code:     domain.HealthNoticeTailscaleWarning,
+		Severity: domain.HealthNoticeWarning,
+		Message:  "DNS configuration is unavailable.",
+	}}
 	service := mustService(t, &fakeDaemon{snapshot: raw}, newFakeStore(), nil)
 
 	snapshot, err := service.GetSnapshot()
 	if err != nil {
 		t.Fatalf("GetSnapshot() error: %v", err)
 	}
-	if len(snapshot.HealthWarnings) != 1 || snapshot.HealthWarnings[0] != raw.HealthWarnings[0] {
-		t.Fatalf("health warnings = %#v", snapshot.HealthWarnings)
+	if len(snapshot.HealthNotices) != 1 || snapshot.HealthNotices[0] != raw.HealthNotices[0] {
+		t.Fatalf("health notices = %#v", snapshot.HealthNotices)
 	}
 }
 

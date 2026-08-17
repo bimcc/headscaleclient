@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Copy,
+  Info,
   Laptop,
   Monitor,
   Radio,
@@ -9,11 +10,17 @@ import {
 } from "lucide-react";
 import type {
   AppSnapshot,
+  HealthNotice,
   PreferenceKey,
   RuntimeState,
 } from "../lib/contracts";
 import { IconButton, SettingRow, StatusBadge, Toggle, type Tone } from "../components/ui";
 import { useI18n, type Translate } from "../lib/i18n";
+
+function healthNoticeText(notice: HealthNotice, t: Translate) {
+  if (notice.code === "routes-not-accepted") return t("overview.routesNotAcceptedNotice");
+  return notice.message;
+}
 
 function connectionSummary(runtime: RuntimeState, warningCount: number, t: Translate): { label: string; detail: string; tone: Tone } {
   if (["missing", "stopped", "incompatible"].includes(runtime.daemon)) {
@@ -66,7 +73,9 @@ export function OverviewView({
   onShowDevices: () => void;
 }) {
   const { t } = useI18n();
-  const healthWarnings = snapshot.healthWarnings ?? [];
+  const healthNotices = snapshot.healthNotices ?? [];
+  const healthWarnings = healthNotices.filter((notice) => notice.severity === "warning");
+  const healthInformation = healthNotices.filter((notice) => notice.severity === "info");
   const status = connectionSummary(snapshot.runtime, healthWarnings.length, t);
   const endpoint = snapshot.endpoints.find((item) => item.id === snapshot.activeEndpointId);
   const profile = snapshot.profiles.find((item) => item.id === snapshot.activeProfileId);
@@ -152,7 +161,27 @@ export function OverviewView({
             <strong>{t("overview.healthWarningTitle", { count: healthWarnings.length })}</strong>
             <span>{t("overview.healthWarningSource")}</span>
             <ul className="health-warning-list">
-              {healthWarnings.map((warning, index) => <li key={`${index}-${warning}`}>{warning}</li>)}
+              {healthWarnings.map((notice, index) => (
+                <li key={`${index}-${notice.code}-${notice.message}`} title={notice.message}>
+                  {healthNoticeText(notice, t)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {healthInformation.length > 0 && (
+        <div className="persistent-notice" role="status">
+          <Info aria-hidden="true" size={19} />
+          <div>
+            <strong>{t("overview.healthNoticeTitle", { count: healthInformation.length })}</strong>
+            <ul className="health-notice-list">
+              {healthInformation.map((notice, index) => (
+                <li key={`${index}-${notice.code}-${notice.message}`} title={notice.message}>
+                  {healthNoticeText(notice, t)}
+                </li>
+              ))}
             </ul>
           </div>
         </div>

@@ -103,6 +103,32 @@ export enum ErrorCode {
     ErrorInternal = "internal",
 };
 
+export interface HealthNotice {
+    "code": HealthNoticeCode;
+    "severity": HealthNoticeSeverity;
+    "message": string;
+}
+
+export enum HealthNoticeCode {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    HealthNoticeRoutesNotAccepted = "routes-not-accepted",
+    HealthNoticeTailscaleWarning = "tailscale-warning",
+};
+
+export enum HealthNoticeSeverity {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    HealthNoticeInfo = "info",
+    HealthNoticeWarning = "warning",
+};
+
 export enum Language {
     /**
      * The Go zero value for the underlying type of the enum.
