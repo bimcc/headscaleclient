@@ -228,7 +228,15 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
               onSettingChange={setAppSetting}
               onThemeChange={setTheme}
               onLanguageChange={setLanguage}
-              onCopyDiagnostics={() => void copyText(JSON.stringify({ runtime: snapshot.runtime, engine: snapshot.engine, diagnostics: snapshot.diagnostics }, null, 2), t("settings.summaryCopied"))}
+              onCopyDiagnostics={() => void copyText(JSON.stringify({
+                runtime: snapshot.runtime,
+                engine: snapshot.engine,
+                diagnostics: snapshot.diagnostics,
+                preferences: snapshot.preferences,
+                activeEndpointId: snapshot.activeEndpointId,
+                activeProfileId: snapshot.activeProfileId,
+              }, null, 2), t("settings.summaryCopied"))}
+              onEnsureDaemon={() => void applySnapshotAction("daemon", () => backendClient.ensureDaemon(), t("daemon.ready")).catch(() => undefined)}
             />
           )}
           {view === "about" && (

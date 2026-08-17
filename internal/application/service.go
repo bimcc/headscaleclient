@@ -23,7 +23,7 @@ const (
 	EventOperationFailed = "app:operation-failed"
 
 	DefaultQueryTimeout    = 5 * time.Second
-	DefaultMutationTimeout = 15 * time.Second
+	DefaultMutationTimeout = 45 * time.Second
 	DefaultLoginTimeout    = 30 * time.Second
 	DefaultPendingLoginTTL = 10 * time.Minute
 	DefaultWatchStableTime = 30 * time.Second
@@ -321,12 +321,17 @@ func (s *Service) GetSnapshot() (AppSnapshot, error) {
 
 func (s *Service) EnsureDaemon() (AppSnapshot, error) {
 	return s.mutate("EnsureDaemon", func(ctx context.Context) error {
-		return s.daemonLifecycle.EnsureInstalled(ctx)
+		return s.ensureDaemonReady(ctx)
 	})
 }
 
 func (s *Service) SetConnection(enabled bool) (AppSnapshot, error) {
 	return s.mutate("SetConnection", func(ctx context.Context) error {
+		if enabled {
+			if err := s.ensureDaemonAvailable(ctx); err != nil {
+				return err
+			}
+		}
 		_, err := s.daemon.SetRunning(ctx, enabled)
 		return err
 	})
@@ -358,7 +363,11 @@ func (s *Service) SetExitNode(deviceID *string) (AppSnapshot, error) {
 		if deviceID != nil {
 			value = strings.TrimSpace(*deviceID)
 		}
-		_, err := s.daemon.PatchPreferences(ctx, domain.PreferencePatch{ExitNodeID: &value})
+		allowLANAccess := value != ""
+		_, err := s.daemon.PatchPreferences(ctx, domain.PreferencePatch{
+			ExitNodeID:             &value,
+			ExitNodeAllowLANAccess: &allowLANAccess,
+		})
 		return err
 	})
 }
@@ -468,6 +477,12 @@ func (s *Service) BeginLogin(endpointID string) (LoginResult, error) {
 		return LoginResult{}, err
 	}
 	defer s.releaseMutation()
+	if err := s.ensureDaemonAvailable(ctx); err != nil {
+		s.clearPendingLogin(pending.sessionID)
+		err = normalizeError(err, "Could not start the local network service.")
+		s.emitOperationFailed("BeginLogin", err)
+		return LoginResult{}, err
+	}
 
 	endpoint, err := s.findEndpoint(ctx, pending.endpointID)
 	if err != nil {
@@ -608,7 +623,61 @@ func (s *Service) Start() {
 		return
 	}
 	s.watchDone = make(chan struct{})
-	go s.watchLoop(s.serviceCtx, s.watchDone)
+	go func() {
+		s.ensureManagedDaemonOnStartup()
+		s.watchLoop(s.serviceCtx, s.watchDone)
+	}()
+}
+
+func (s *Service) ensureManagedDaemonOnStartup() {
+	ctx, cancel := context.WithTimeout(s.serviceCtx, s.queryTimeout)
+	status, err := s.daemonLifecycle.Inspect(ctx)
+	cancel()
+	if err != nil || (status.Ownership != domain.EngineOwnershipManaged && status.Ownership != domain.EngineOwnershipPrepared) {
+		return
+	}
+	_, _ = s.mutate("EnsureDaemonStartup", func(ctx context.Context) error {
+		return s.ensureDaemonReady(ctx)
+	})
+}
+
+func (s *Service) ensureDaemonReady(ctx context.Context) error {
+	if err := s.daemonLifecycle.EnsureInstalled(ctx); err != nil {
+		return err
+	}
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
+	var lastErr error
+	for {
+		_, err := s.daemon.Snapshot(ctx)
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+		problem := domain.ProblemFromError(err)
+		switch problem.Code {
+		case domain.ErrorDaemonUnavailable, domain.ErrorDaemonStopped, domain.ErrorTimeout:
+		default:
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			detail := "The LocalAPI endpoint did not become ready."
+			if lastProblem := domain.ProblemFromError(lastErr); lastProblem != nil && lastProblem.Message != "" {
+				detail = lastProblem.Message
+			}
+			return domain.WrapError(domain.ErrorTimeout, "The network service started, but LocalAPI did not become ready in time.", ctx.Err()).
+				WithDetail(detail).WithRetryable(true)
+		case <-ticker.C:
+		}
+	}
+}
+
+func (s *Service) ensureDaemonAvailable(ctx context.Context) error {
+	if _, err := s.daemon.Snapshot(ctx); err == nil {
+		return nil
+	}
+	return s.ensureDaemonReady(ctx)
 }
 
 func (s *Service) Close() {

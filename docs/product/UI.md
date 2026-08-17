@@ -33,6 +33,11 @@ desktop preferences, while Runtime & diagnostics contains daemon status,
 technical values, and the copy-summary action. Product attribution does not
 appear as a settings footer; it belongs to the separate About view.
 
+When the daemon is unavailable, Runtime & diagnostics exposes a fixed
+`Start and repair` action for a product-managed service or `Start service` for
+an external service. A service operation is successful only after LocalAPI is
+reachable; users are never instructed to launch `tailscaled.exe` directly.
+
 ## Networks and accounts
 
 The Networks view separates two related lists:
@@ -63,6 +68,12 @@ there is no separate status strip between server actions and accounts.
 5. Setting rows for exit node, DNS, routes, and shields-up. LAN access is
    visually subordinate to exit-node selection and remains unavailable until
    an exit node is selected.
+
+Selecting an exit node defaults LAN access to enabled. If an existing daemon
+profile has an exit node with LAN access disabled, Overview shows a persistent
+warning and a direct `Allow LAN access` action. Accept-routes copy warns that an
+advertised subnet overlapping the current physical LAN must be disabled or
+corrected at the control plane.
 
 The Overview does not duplicate peer rows. The Devices view is the single
 detailed inventory for the active daemon profile; switching the active account

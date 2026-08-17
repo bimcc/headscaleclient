@@ -1820,6 +1820,11 @@ select {
   font-size: 12.5px;
 }
 
+.inline-health-warning > span {
+  flex: 1;
+  min-width: 0;
+}
+
 .button-cluster {
   display: flex;
   gap: 8px;

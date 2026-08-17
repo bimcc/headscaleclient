@@ -65,6 +65,7 @@ describe("HeadscaleClient shell", () => {
 
     expect(screen.getByRole("heading", { name: "常规设置" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "运行与诊断" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "启动并修复" })).toBeEnabled();
     expect(screen.queryByRole("heading", { name: "应用" })).not.toBeInTheDocument();
     expect(screen.queryByText("Powered by BIMCC., Ltd.")).not.toBeInTheDocument();
 
@@ -122,8 +123,28 @@ describe("HeadscaleClient shell", () => {
 
     await user.selectOptions(screen.getByRole("combobox", { name: "出口节点" }), "peer-nas");
     await waitFor(() => expect(allowLan).toBeEnabled());
+    expect(allowLan).toHaveAttribute("aria-checked", "true");
     expect(allowLan.closest(".setting-row")).not.toHaveClass("is-disabled");
     expect(screen.getByText("使用出口节点时仍可访问本地网络")).toBeInTheDocument();
+  });
+
+  it("warns when an existing exit-node profile blocks LAN access", async () => {
+    const user = userEvent.setup();
+    const backend = createBackend();
+    const snapshot = createDemoSnapshot();
+    snapshot.preferences.exitNodeId = "peer-nas";
+    snapshot.preferences.allowLanAccess = false;
+    vi.spyOn(backend, "getSnapshot").mockResolvedValue(snapshot);
+    const setPreference = vi.spyOn(backend, "setPreference").mockImplementation(async (key, value) => {
+      snapshot.preferences[key] = value;
+      return snapshot;
+    });
+
+    render(<App backendClient={backend} />);
+
+    expect(await screen.findByText("出口节点正在阻止局域网访问")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "允许局域网访问" }));
+    await waitFor(() => expect(setPreference).toHaveBeenCalledWith("allowLanAccess", true));
   });
 
   it("switches saved profiles from the header account menu", async () => {

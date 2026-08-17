@@ -69,8 +69,11 @@ export function OverviewView({
   const accountName = profile?.account ?? t("account.noneSelected");
   const onlineDeviceCount = snapshot.devices.filter((item) => item.online).length;
   const isTunnelRunning = ["running", "degraded"].includes(snapshot.runtime.connection);
-  const canEnsureDaemon = snapshot.engine.canInstall || snapshot.engine.canStart;
-  const daemonActionLabel = snapshot.engine.canInstall ? t("daemon.install") : t("daemon.start");
+  const canEnsureDaemon = snapshot.engine.canInstall || snapshot.engine.canStart ||
+    (snapshot.engine.ownership === "managed" && snapshot.engine.payloadAvailable);
+  const daemonActionLabel = snapshot.engine.ownership === "managed"
+    ? t("daemon.repair")
+    : snapshot.engine.canInstall ? t("daemon.install") : t("daemon.start");
 
   return (
     <div className="view-stack">
@@ -126,6 +129,24 @@ export function OverviewView({
               {daemonActionLabel}
             </button>
           )}
+        </div>
+      )}
+
+      {snapshot.preferences.exitNodeId && !snapshot.preferences.allowLanAccess && (
+        <div className="persistent-alert" role="alert">
+          <AlertTriangle aria-hidden="true" size={19} />
+          <div>
+            <strong>{t("overview.lanBlockedTitle")}</strong>
+            <span>{t("overview.lanBlockedDescription")}</span>
+          </div>
+          <button
+            className="button secondary daemon-action"
+            type="button"
+            disabled={busy === "allowLanAccess"}
+            onClick={() => onPreferenceChange("allowLanAccess", true)}
+          >
+            {t("overview.enableLAN")}
+          </button>
         </div>
       )}
 

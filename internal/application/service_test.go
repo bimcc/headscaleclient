@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -103,6 +104,36 @@ func TestEnsureDaemonTransitionsPreparedPayloadToRunning(t *testing.T) {
 	}
 	if snapshot.Engine.Ownership != domain.EngineOwnershipManaged || snapshot.Engine.Service != domain.EngineServiceRunning {
 		t.Fatalf("engine status after install = %+v", snapshot.Engine)
+	}
+}
+
+func TestEnsureDaemonWaitsForLocalAPIReadiness(t *testing.T) {
+	t.Parallel()
+
+	var calls atomic.Int32
+	daemon := &fakeDaemon{snapshotFn: func(context.Context) (domain.AppSnapshot, error) {
+		if calls.Add(1) == 1 {
+			return domain.AppSnapshot{}, domain.NewError(domain.ErrorDaemonUnavailable, "LocalAPI is not ready.").WithRetryable(true)
+		}
+		return healthyDomainSnapshot(), nil
+	}}
+	lifecycle := &fakeDaemonLifecycle{status: domain.EngineStatus{
+		Ownership:        domain.EngineOwnershipManaged,
+		Service:          domain.EngineServiceStopped,
+		PayloadAvailable: true,
+		CanStart:         true,
+	}}
+	service := mustService(t, daemon, newFakeStore(), nil, WithDaemonLifecycle(lifecycle), WithTimeouts(time.Second, time.Second, time.Second))
+
+	snapshot, err := service.EnsureDaemon()
+	if err != nil {
+		t.Fatalf("EnsureDaemon() error: %v", err)
+	}
+	if calls.Load() < 2 {
+		t.Fatalf("Snapshot() calls = %d, want at least 2", calls.Load())
+	}
+	if snapshot.Runtime.Daemon != domain.DaemonReady {
+		t.Fatalf("runtime daemon = %q, want %q", snapshot.Runtime.Daemon, domain.DaemonReady)
 	}
 }
 
@@ -228,6 +259,31 @@ func TestSetPreferenceUsesOptionalPatchAndPublishesSnapshot(t *testing.T) {
 	payload, ok := events[0].payload.(SnapshotChangedEvent)
 	if !ok || payload.Sequence != 1 {
 		t.Fatalf("snapshot event payload = %#v", events[0].payload)
+	}
+}
+
+func TestSetExitNodeEnablesLANAccessByDefault(t *testing.T) {
+	t.Parallel()
+
+	daemon := &fakeDaemon{snapshot: healthyDomainSnapshot()}
+	service := mustService(t, daemon, newFakeStore(), nil)
+	exitNodeID := "exit-node-1"
+
+	snapshot, err := service.SetExitNode(&exitNodeID)
+	if err != nil {
+		t.Fatalf("SetExitNode() error: %v", err)
+	}
+	daemon.mu.Lock()
+	patch := daemon.patches[len(daemon.patches)-1]
+	daemon.mu.Unlock()
+	if patch.ExitNodeID == nil || *patch.ExitNodeID != exitNodeID {
+		t.Fatalf("exit node patch = %+v", patch)
+	}
+	if patch.ExitNodeAllowLANAccess == nil || !*patch.ExitNodeAllowLANAccess {
+		t.Fatalf("LAN access was not enabled: %+v", patch)
+	}
+	if snapshot.Preferences.ExitNodeID == nil || *snapshot.Preferences.ExitNodeID != exitNodeID || !snapshot.Preferences.AllowLANAccess {
+		t.Fatalf("snapshot preferences = %+v", snapshot.Preferences)
 	}
 }
 

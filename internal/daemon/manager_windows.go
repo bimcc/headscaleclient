@@ -5,6 +5,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,12 +53,13 @@ func (m *platformManager) Inspect(ctx context.Context) (domain.EngineStatus, err
 	}
 
 	status.Service = mapWindowsServiceState(serviceStatus.State)
-	status.CanStart = status.Service == domain.EngineServiceStopped
-	if payloadAvailable && sameExecutable(binaryPath, payloadPath) {
+	if matchesManagedWindowsExecutable(binaryPath, payloadPath, legacyWindowsPayload()) {
 		status.Ownership = domain.EngineOwnershipManaged
 	} else {
 		status.Ownership = domain.EngineOwnershipExternal
 	}
+	status.CanStart = status.Service == domain.EngineServiceStopped &&
+		(status.Ownership == domain.EngineOwnershipExternal || payloadAvailable)
 	return status, nil
 }
 
@@ -67,24 +69,38 @@ func (m *platformManager) EnsureInstalled(ctx context.Context) error {
 		return err
 	}
 	if status.Service == domain.EngineServiceRunning || status.Service == domain.EngineServiceStarting {
+		if status.Service == domain.EngineServiceStarting {
+			return waitForWindowsService(ctx, true)
+		}
 		return nil
 	}
+	payloadPath, payloadAvailable := windowsPayload()
 	if status.Service == domain.EngineServiceMissing {
-		if !status.PayloadAvailable {
+		if !payloadAvailable {
 			return domain.NewError(domain.ErrorDaemonMissing, "The bundled network service payload is unavailable.").WithDetail("Reinstall HeadscaleClient using the full machine installer.")
 		}
-		payloadPath, _ := windowsPayload()
-		if err := shellExecuteElevated(payloadPath, "install-system-daemon", filepath.Dir(payloadPath)); err != nil {
-			return domain.WrapError(domain.ErrorPermissionDenied, "Administrator approval is required to install the network service.", err).WithRetryable(true)
-		}
+		return configureManagedWindowsService(ctx, payloadPath, false)
+	}
+	if status.Service == domain.EngineServiceStopping {
 		if err := waitForWindowsService(ctx, false); err != nil {
 			return err
 		}
+		return m.EnsureInstalled(ctx)
+	}
+	if status.Service != domain.EngineServiceStopped {
+		return domain.NewError(domain.ErrorDaemonUnavailable, "The Windows network service is in an unsupported state.").WithRetryable(true)
+	}
+	if status.Ownership == domain.EngineOwnershipManaged {
+		if !payloadAvailable {
+			return domain.NewError(domain.ErrorDaemonMissing, "The managed network service payload is unavailable.").WithDetail("Reinstall HeadscaleClient using the full machine installer.")
+		}
+		return configureManagedWindowsService(ctx, payloadPath, true)
 	}
 
 	if err := startWindowsService(); err != nil {
 		if !errors.Is(err, windows.ERROR_ACCESS_DENIED) {
-			return domain.WrapError(domain.ErrorDaemonStopped, "The network service could not be started.", err).WithRetryable(true)
+			return domain.WrapError(domain.ErrorDaemonStopped, "The external network service could not be started.", err).
+				WithDetail(fmt.Sprintf("Windows service error: %v", err)).WithRetryable(true)
 		}
 		scPath := filepath.Join(os.Getenv("SystemRoot"), "System32", "sc.exe")
 		if err := shellExecuteElevated(scPath, "start "+windowsServiceName, filepath.Dir(scPath)); err != nil {
@@ -92,6 +108,42 @@ func (m *platformManager) EnsureInstalled(ctx context.Context) error {
 		}
 	}
 	return waitForWindowsService(ctx, true)
+}
+
+func configureManagedWindowsService(ctx context.Context, payloadPath string, repair bool) error {
+	if !fileExists(payloadPath) {
+		return domain.NewError(domain.ErrorDaemonMissing, "The managed network service executable is missing.").
+			WithDetail("Reinstall HeadscaleClient using the full machine installer.")
+	}
+	powerShellPath := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	if !fileExists(powerShellPath) {
+		return domain.NewError(domain.ErrorDaemonUnavailable, "Windows PowerShell is required to repair the network service.")
+	}
+	quotedPayload := "'" + strings.ReplaceAll(payloadPath, "'", "''") + "'"
+	commands := []string{"$ErrorActionPreference = 'Stop'"}
+	if repair {
+		commands = append(commands,
+			"& "+quotedPayload+" uninstall-system-daemon",
+			"if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+		)
+	}
+	commands = append(commands,
+		"& "+quotedPayload+" install-system-daemon",
+		"if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+		"Start-Service -Name '"+windowsServiceName+"'",
+	)
+	parameters := `-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "` + strings.Join(commands, "; ") + `"`
+	if err := shellExecuteElevated(powerShellPath, parameters, filepath.Dir(payloadPath)); err != nil {
+		return domain.WrapError(domain.ErrorPermissionDenied, "Administrator approval is required to install or repair the network service.", err).WithRetryable(true)
+	}
+	if err := waitForWindowsManagedService(ctx, payloadPath); err != nil {
+		if problem := domain.ProblemFromError(err); problem != nil && problem.Code == domain.ErrorCancelled {
+			return err
+		}
+		return domain.WrapError(domain.ErrorDaemonStopped, "The managed network service could not be started.", err).
+			WithDetail("Close any manually started tailscaled.exe process, then use Start and repair again.").WithRetryable(true)
+	}
+	return nil
 }
 
 func inspectWindowsService() (svc.Status, string, error) {
@@ -147,9 +199,25 @@ func waitForWindowsService(ctx context.Context, running bool) error {
 			if running && status.State == svc.Running {
 				return nil
 			}
-			if !running {
+			if !running && status.State == svc.Stopped {
 				return nil
 			}
+		}
+		select {
+		case <-ctx.Done():
+			return classifyContextError(ctx.Err())
+		case <-ticker.C:
+		}
+	}
+}
+
+func waitForWindowsManagedService(ctx context.Context, payloadPath string) error {
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		status, binaryPath, err := inspectWindowsService()
+		if err == nil && status.State == svc.Running && sameExecutable(binaryPath, payloadPath) {
+			return nil
 		}
 		select {
 		case <-ctx.Done():
@@ -175,6 +243,22 @@ func windowsPayload() (string, bool) {
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()
+}
+
+func legacyWindowsPayload() string {
+	programFiles := os.Getenv("ProgramW6432")
+	if programFiles == "" {
+		programFiles = os.Getenv("ProgramFiles")
+	}
+	if programFiles == "" {
+		return ""
+	}
+	return filepath.Join(programFiles, "BIMCC., Ltd.", "HeadscaleClient", "daemon", "tailscaled.exe")
+}
+
+func matchesManagedWindowsExecutable(binaryPath, payloadPath, legacyPayloadPath string) bool {
+	return sameExecutable(binaryPath, payloadPath) ||
+		(legacyPayloadPath != "" && sameExecutable(binaryPath, legacyPayloadPath))
 }
 
 func sameExecutable(left, right string) bool {

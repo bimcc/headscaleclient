@@ -90,12 +90,18 @@ LangString ExistingInstallPrompt ${LANG_SIMPCHINESE} "检测到已安装的 Head
 LangString ExistingInstallPrompt ${LANG_ENGLISH} "HeadscaleClient is already installed. Continuing will update or repair the installation while preserving account and network configuration. Continue?"
 LangString ServiceInstalling ${LANG_SIMPCHINESE} "正在安装 HeadscaleClient 托管网络服务"
 LangString ServiceInstalling ${LANG_ENGLISH} "Installing the HeadscaleClient managed network service"
+LangString ServiceRepairing ${LANG_SIMPCHINESE} "正在修复 HeadscaleClient 托管网络服务"
+LangString ServiceRepairing ${LANG_ENGLISH} "Repairing the HeadscaleClient managed network service"
 LangString ServiceMigrating ${LANG_SIMPCHINESE} "正在将 HeadscaleClient 托管网络服务迁移到新目录"
 LangString ServiceMigrating ${LANG_ENGLISH} "Migrating the HeadscaleClient managed network service to the new directory"
 LangString ServiceInstallFailed ${LANG_SIMPCHINESE} "无法安装网络服务（退出代码 $1）。"
 LangString ServiceInstallFailed ${LANG_ENGLISH} "The network service could not be installed (exit code $1)."
+LangString ServiceRepairFailed ${LANG_SIMPCHINESE} "无法修复网络服务（退出代码 $1）。请关闭手工运行的 tailscaled.exe 后重试。"
+LangString ServiceRepairFailed ${LANG_ENGLISH} "The network service could not be repaired (exit code $1). Close any manually started tailscaled.exe process and try again."
 LangString ServiceMigrationFailed ${LANG_SIMPCHINESE} "无法迁移旧版网络服务（退出代码 $1）。请先卸载旧版本后重试。"
 LangString ServiceMigrationFailed ${LANG_ENGLISH} "The previous network service could not be migrated (exit code $1). Uninstall the previous version and try again."
+LangString ServiceStartFailed ${LANG_SIMPCHINESE} "网络服务未能启动（退出代码 $1）。请关闭手工运行的 tailscaled.exe 后重试。"
+LangString ServiceStartFailed ${LANG_ENGLISH} "The network service could not be started (exit code $1). Close any manually started tailscaled.exe process and try again."
 LangString ServiceReusing ${LANG_SIMPCHINESE} "正在复用现有的 Tailscale 网络服务"
 LangString ServiceReusing ${LANG_ENGLISH} "Reusing the existing Tailscale network service"
 LangString ServiceRemoving ${LANG_SIMPCHINESE} "正在移除 HeadscaleClient 托管网络服务"
@@ -145,19 +151,11 @@ Section
     
     !insertmacro wails.files
 
-    SetOutPath "$INSTDIR\daemon"
-    File "${ARG_DAEMON_DIR}\tailscaled.exe"
-    File "${ARG_DAEMON_DIR}\tailscale.exe"
-    File "${ARG_DAEMON_DIR}\wintun.dll"
-    File "${ARG_DAEMON_DIR}\provenance.json"
-    SetOutPath "$INSTDIR\daemon\licenses"
-    File "${ARG_DAEMON_DIR}\licenses\TAILSCALE-LICENSE.txt"
-    File "${ARG_DAEMON_DIR}\licenses\WINTUN-PREBUILT-LICENSE.txt"
-    SetOutPath $INSTDIR
-
     ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Services\Tailscale" "ImagePath"
     StrCpy $2 '"${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe"'
     StrCpy $3 '${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe'
+    StrCpy $5 '"$INSTDIR\daemon\tailscaled.exe"'
+    StrCpy $6 '$INSTDIR\daemon\tailscaled.exe'
     StrCpy $4 "0"
     ${If} $0 == ""
         StrCpy $4 "1"
@@ -173,9 +171,29 @@ Section
         IfFileExists "${LEGACY_INSTALL_DIRECTORY}\uninstall.exe" 0 +2
             ExecWait '"${LEGACY_INSTALL_DIRECTORY}\uninstall.exe" /S'
         StrCpy $4 "1"
+    ${ElseIf} $0 == $5
+    ${OrIf} $0 == $6
+        DetailPrint "$(ServiceRepairing)"
+        nsExec::ExecToLog '"$INSTDIR\daemon\tailscaled.exe" uninstall-system-daemon'
+        Pop $1
+        ${If} $1 != 0
+            MessageBox MB_ICONSTOP "$(ServiceRepairFailed)"
+            Abort
+        ${EndIf}
+        StrCpy $4 "1"
     ${Else}
         DetailPrint "$(ServiceReusing)"
     ${EndIf}
+
+    SetOutPath "$INSTDIR\daemon"
+    File "${ARG_DAEMON_DIR}\tailscaled.exe"
+    File "${ARG_DAEMON_DIR}\tailscale.exe"
+    File "${ARG_DAEMON_DIR}\wintun.dll"
+    File "${ARG_DAEMON_DIR}\provenance.json"
+    SetOutPath "$INSTDIR\daemon\licenses"
+    File "${ARG_DAEMON_DIR}\licenses\TAILSCALE-LICENSE.txt"
+    File "${ARG_DAEMON_DIR}\licenses\WINTUN-PREBUILT-LICENSE.txt"
+    SetOutPath $INSTDIR
 
     ${If} $4 == "1"
         DetailPrint "$(ServiceInstalling)"
@@ -185,8 +203,14 @@ Section
             MessageBox MB_ICONSTOP "$(ServiceInstallFailed)"
             Abort
         ${EndIf}
-        nsExec::ExecToLog '"$SYSDIR\sc.exe" start Tailscale'
-        Pop $1
+    ${EndIf}
+
+    nsExec::ExecToLog '"$SYSDIR\sc.exe" start Tailscale'
+    Pop $1
+    ${If} $1 != 0
+    ${AndIf} $1 != 1056
+        MessageBox MB_ICONSTOP "$(ServiceStartFailed)"
+        Abort
     ${EndIf}
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"

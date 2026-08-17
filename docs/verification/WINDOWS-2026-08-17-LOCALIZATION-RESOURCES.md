@@ -12,7 +12,7 @@
 
 - `go test ./...`: passed.
 - `go vet ./...`: passed.
-- Frontend Vitest: 57 tests passed.
+- Frontend Vitest: 58 tests passed.
 - Frontend TypeScript and production build: passed.
 - Generated binding surface: 1 service, 14 methods, 19 models, 5 events.
 - Chinese default, immediate English switching, `document.lang`, and English
@@ -27,6 +27,9 @@
   region `hkg`. Three official CLI Disco probes all reported `DERP(hkg)` and
   ended with direct connection not established, confirming that the former
   TSMP-derived Direct label was false.
+- Windows lifecycle tests cover current, legacy-managed, and official external
+  executable ownership. Application tests verify that service success waits
+  for LocalAPI readiness and that selecting an exit node enables LAN access.
 
 ## Responsive checks
 
@@ -53,6 +56,12 @@ the former status strip, and places its account count in the Accounts header.
 Settings has General and Runtime & diagnostics groups; product and upstream
 attribution appears only in the bilingual About view. The five navigation
 labels and the mobile device icon plus online count fit at 390 px.
+
+The managed-service repair action and exit-node LAN-isolation warning were
+checked at `960 x 680` and `390 x 844`. Both actions remained visible and
+operable, warning copy wrapped without overlap, and document width equalled
+viewport width. Selecting an exit node enabled LAN access by default; explicitly
+disabling it produced the persistent recovery warning.
 
 The Devices view calls status-derived routing `Recent path`. Its Ping action
 reports an independently measured `Probe result`; successful probes publish a
@@ -81,10 +90,10 @@ settle for eight seconds, sampled over the next ten seconds, and then stopped:
 | Working set | 29.5 MiB |
 | Private memory | 54.5 MiB |
 | CPU delta over 10 seconds | 0.00% of one core |
-| Production frontend JavaScript | 249.03 kB |
-| Production frontend JavaScript, gzip | 77.43 kB |
-| Native executable | 15.63 MiB |
-| Windows installer | 23.78 MiB |
+| Production frontend JavaScript | 251.22 kB |
+| Production frontend JavaScript, gzip | 77.91 kB |
+| Native executable | 15.64 MiB |
+| Windows installer | 23.79 MiB |
 
 This is a single idle sample on one development machine, not a cross-platform
 performance guarantee. Login, peer churn, active transfer, DERP traffic, and
@@ -93,13 +102,16 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `64DFADC1B13EE26B6A74560479BFBADC0F6803872625BFB54836246EFB248ECC`
+- SHA-256: `5BD5040CD219F1138CA4D7BDD5987104BC0B9D5914AA280276CC2C75735C6FE8`
 - Default machine installation directory: `C:\Program Files\BIMCC\HeadscaleClient`
 - A registered installation produces a localized update-or-repair confirmation;
   cancelling exits setup, while continuing preserves product configuration.
 - The installer migrates only a managed service whose executable matches the
   previous default product directory; official or other external Tailscale
   services remain untouched.
+- A recognized managed service is stopped before its payload is replaced,
+  re-registered afterward, and required to start successfully. Setup accepts
+  Windows code `1056` only as the already-running case.
 - Installer company metadata: `BIMCC., Ltd.`
 - Installer copyright: `(c) 2026 BIMCC., Ltd.`
 - In-app publisher attribution: About view, `BIMCC., Ltd.`

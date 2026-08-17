@@ -38,6 +38,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] BE-011 Add fail-fast endpoint reachability checks before interactive login.
 - [x] BE-012 Replace TSMP route misclassification with bounded Disco probes and
   publish a refreshed, measured peer path after Ping.
+- [x] BE-013 Auto-start prepared or managed services, repair stopped managed
+  Windows registrations, and require LocalAPI readiness before success.
 
 ## LocalAPI adapter tests
 
@@ -87,6 +89,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   LAN-access row, connector, and explicit disabled styling.
 - [x] UI-021 Rename device route state to recent path, distinguish online
   unknown routes from offline peers, and synchronize accurate probe results.
+- [x] UI-022 Add settings-level service repair and an actionable exit-node LAN
+  isolation warning; default newly selected exit nodes to LAN access enabled.
 
 ## Desktop integration
 
@@ -131,6 +135,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] MDE-009 Sign the GUI, daemon-bearing installer, and update manifest. The
   Windows build now signs the GUI before packaging and the outer installer
   afterward; a public BIMCC Authenticode certificate and update signing remain.
+- [x] MDE-010 Stop managed services before payload replacement, re-register them
+  during install, and validate the final Windows service start result.
 
 ## Release readiness
 
@@ -168,6 +174,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   `C:\Program Files\BIMCC\HeadscaleClient` without changing publisher metadata,
   added an existing-install confirmation, and implemented an exact-path
   migration for the previous managed service directory.
+- [x] 2026-08-17 Hardened Windows service install/start/repair and LocalAPI
+  readiness, then added exit-node LAN protection and diagnostics.
 - [ ] Complete a separate-profile interactive login against the test Headscale endpoint.
 - [ ] Complete macOS, real-host Linux, signed installer, and clean-machine matrices.
 

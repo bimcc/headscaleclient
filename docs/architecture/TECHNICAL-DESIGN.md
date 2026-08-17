@@ -183,10 +183,20 @@ preparation step downloads the exact upstream MSI and verifies:
 3. The committed SHA-256 of `tailscaled.exe`, `tailscale.exe`, and `wintun.dll`.
 4. Valid extracted-file signatures from Tailscale Inc. or WireGuard LLC.
 
-Only verified generated files enter `bin/daemon/windows-<arch>/`. NSIS copies
-them to the product's `daemon` directory. The installer creates the service
-only when the `Tailscale` service does not exist. Uninstall compares the actual
-service executable path with the product path before removing it.
+Only verified generated files enter `bin/daemon/windows-<arch>/`. NSIS stops a
+recognized managed service before replacing its executable, then registers and
+starts the verified payload. A current or previous default product path is
+repairable; an official or other external `Tailscale` service remains external
+and is never re-registered. Setup validates the service start result. Uninstall
+compares the actual service executable path with the product path before
+removing it.
+
+At runtime, a stopped prepared or managed Windows service is started or repaired
+through one fixed elevated operation. Service state alone is insufficient:
+`EnsureDaemon` waits until the protected LocalAPI endpoint responds before it
+reports success. Application startup performs this check automatically only for
+prepared or product-managed services; external services require an explicit
+user action.
 
 The trusted Windows release task signs the GUI before NSIS embeds it and signs
 the resulting installer afterward, timestamping both signatures. A public
@@ -222,6 +232,15 @@ and must not be confused with an omitted field.
 
 The frontend can never submit a complete daemon `Prefs` object because an old
 UI could overwrite fields introduced by a newer daemon.
+
+Selecting an exit node through HeadscaleClient also enables
+`ExitNodeAllowLANAccess` by default. This prevents the exit-node blackhole route
+from unexpectedly isolating locally accessible subnets. Users may still disable
+LAN access explicitly. Existing profiles with an exit node and LAN access off
+are not silently mutated; the UI presents a warning and a one-click recovery.
+`RouteAll` remains an independent user preference because a Headscale-advertised
+subnet that overlaps the current physical LAN can cause a separate route
+conflict.
 
 ## Interactive login sequence
 

@@ -1,4 +1,4 @@
-import { Clipboard, ShieldAlert } from "lucide-react";
+import { Clipboard, ShieldAlert, Wrench } from "lucide-react";
 import type {
   AppSettingKey,
   AppSettings,
@@ -38,6 +38,7 @@ export function SettingsView({
   onThemeChange,
   onLanguageChange,
   onCopyDiagnostics,
+  onEnsureDaemon,
 }: {
   settings: AppSettings;
   runtime: RuntimeState;
@@ -48,8 +49,11 @@ export function SettingsView({
   onThemeChange: (theme: ThemePreference) => void;
   onLanguageChange: (language: LanguagePreference) => void;
   onCopyDiagnostics: () => void;
+  onEnsureDaemon: () => void;
 }) {
   const { t } = useI18n();
+  const canEnsureDaemon = engine.canInstall || engine.canStart ||
+    (engine.ownership === "managed" && engine.payloadAvailable);
   return (
     <div className="view-stack settings-view">
       <section className="section-block" aria-labelledby="application-settings-title">
@@ -118,6 +122,12 @@ export function SettingsView({
           <div className="inline-health-warning">
             <ShieldAlert aria-hidden="true" size={19} />
             <span>{engine.canInstall ? t("settings.installHint") : t("settings.repairHint")}</span>
+            {canEnsureDaemon && (
+              <button className="button secondary with-icon" type="button" disabled={busy === "daemon"} onClick={onEnsureDaemon}>
+                <Wrench aria-hidden="true" size={16} />
+                {engine.ownership === "external" ? t("settings.startService") : t("settings.repairService")}
+              </button>
+            )}
           </div>
         )}
       </section>

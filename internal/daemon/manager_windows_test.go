@@ -23,6 +23,21 @@ func TestSameExecutableNormalizesQuotesAndCase(t *testing.T) {
 	}
 }
 
+func TestMatchesManagedWindowsExecutableIncludesLegacyDefaultPath(t *testing.T) {
+	t.Parallel()
+
+	current := `C:\Program Files\BIMCC\HeadscaleClient\daemon\tailscaled.exe`
+	legacy := `C:\Program Files\BIMCC., Ltd.\HeadscaleClient\daemon\tailscaled.exe`
+	for _, path := range []string{current, legacy} {
+		if !matchesManagedWindowsExecutable(`"`+path+`"`, current, legacy) {
+			t.Fatalf("managed path %q was not recognized", path)
+		}
+	}
+	if matchesManagedWindowsExecutable(`"C:\Program Files\Tailscale\tailscaled.exe"`, current, legacy) {
+		t.Fatal("official Tailscale path was classified as managed")
+	}
+}
+
 func TestMapWindowsServiceState(t *testing.T) {
 	t.Parallel()
 

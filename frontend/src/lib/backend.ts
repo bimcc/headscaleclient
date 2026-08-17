@@ -234,6 +234,7 @@ class DemoBackend implements HeadscaleBackend {
   async setExitNode(deviceId: string | null) {
     await pause();
     this.snapshot.preferences.exitNodeId = deviceId;
+    this.snapshot.preferences.allowLanAccess = deviceId !== null;
     this.touch();
     return this.copy();
   }
