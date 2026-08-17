@@ -120,6 +120,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] DESK-010 Add an always-visible Simplified Chinese/English installer
   choice, seed first-launch language without overwriting saved preferences,
   localize custom setup messages, and enable the checked finish-page run action.
+- [x] DESK-011 Hide raw Windows service-control output during setup and present
+  localized started, already-running, and genuine failure states.
 
 ## Resource efficiency
 
