@@ -5,6 +5,8 @@
 - The WebView frontend is untrusted input to narrow Go service methods.
 - The Go application trusts only validated LocalAPI responses and local config.
 - A custom control server is remote and untrusted until TLS validation succeeds.
+- The control server decides which peers are visible and which traffic policy
+  is distributed; a peer row in the client is not an authorization grant.
 - `tailscaled` owns node keys and privileged network configuration.
 - The machine installer and explicit service repair are privileged operations;
   the long-running Wails process is not.
@@ -21,6 +23,8 @@
 - Auth keys are one-time inputs, redacted from logs, and not stored in normal config.
 - Browser login tokens and daemon node keys are never copied into application storage.
 - Diagnostic exports redact tokens, profile pictures where practical, and local paths.
+- Displaying, pinging, or copying a peer address must not be represented as
+  proof that an ACL/Grant permits application traffic to that peer.
 - GUI and watcher goroutines run without administrator/root elevation.
 - The frontend cannot submit service names, executable paths, shell commands,
   or arguments. It can request only the fixed `EnsureDaemon` operation.

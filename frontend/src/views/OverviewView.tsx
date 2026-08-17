@@ -15,7 +15,7 @@ import type {
 import { IconButton, SettingRow, StatusBadge, Toggle, type Tone } from "../components/ui";
 import { useI18n, type Translate } from "../lib/i18n";
 
-function connectionSummary(runtime: RuntimeState, t: Translate): { label: string; detail: string; tone: Tone } {
+function connectionSummary(runtime: RuntimeState, warningCount: number, t: Translate): { label: string; detail: string; tone: Tone } {
   if (["missing", "stopped", "incompatible"].includes(runtime.daemon)) {
     return { label: t("connection.serviceUnavailable"), detail: t("connection.tailscaledStopped"), tone: "danger" };
   }
@@ -31,7 +31,11 @@ function connectionSummary(runtime: RuntimeState, t: Translate): { label: string
   if (runtime.connection === "degraded") {
     return runtime.control === "unreachable"
       ? { label: t("connection.tunnelConnected"), detail: t("connection.controlLimited"), tone: "warning" }
-      : { label: t("connection.tunnelConnected"), detail: t("connection.localWarning"), tone: "warning" };
+      : {
+          label: t("connection.tunnelConnected"),
+          detail: warningCount > 0 ? t("connection.warningCount", { count: warningCount }) : t("connection.localWarning"),
+          tone: "warning",
+        };
   }
   if (runtime.connection === "running") {
     if (runtime.control === "unreachable") {
@@ -62,12 +66,21 @@ export function OverviewView({
   onShowDevices: () => void;
 }) {
   const { t } = useI18n();
-  const status = connectionSummary(snapshot.runtime, t);
+  const healthWarnings = snapshot.healthWarnings ?? [];
+  const status = connectionSummary(snapshot.runtime, healthWarnings.length, t);
   const endpoint = snapshot.endpoints.find((item) => item.id === snapshot.activeEndpointId);
   const profile = snapshot.profiles.find((item) => item.id === snapshot.activeProfileId);
   const endpointName = endpoint?.name ?? t("network.noneSelected");
   const accountName = profile?.account ?? t("account.noneSelected");
   const onlineDeviceCount = snapshot.devices.filter((item) => item.online).length;
+  const exitNodeOptions = snapshot.devices.filter((device) => device.exitNodeOption);
+  const selectedExitNodeMissing = Boolean(snapshot.preferences.exitNodeId) &&
+    !exitNodeOptions.some((device) => device.id === snapshot.preferences.exitNodeId);
+  const exitNodeDescription = exitNodeOptions.length === 0
+    ? t("overview.exitNodeNoneApproved")
+    : exitNodeOptions.some((device) => device.online)
+      ? t("overview.exitNodeDescription")
+      : t("overview.exitNodeAllOffline");
   const isTunnelRunning = ["running", "degraded"].includes(snapshot.runtime.connection);
   const canEnsureDaemon = snapshot.engine.canInstall || snapshot.engine.canStart ||
     (snapshot.engine.ownership === "managed" && snapshot.engine.payloadAvailable);
@@ -129,6 +142,19 @@ export function OverviewView({
               {daemonActionLabel}
             </button>
           )}
+        </div>
+      )}
+
+      {healthWarnings.length > 0 && (
+        <div className="persistent-alert health-warning-alert" role="alert">
+          <AlertTriangle aria-hidden="true" size={19} />
+          <div>
+            <strong>{t("overview.healthWarningTitle", { count: healthWarnings.length })}</strong>
+            <span>{t("overview.healthWarningSource")}</span>
+            <ul className="health-warning-list">
+              {healthWarnings.map((warning, index) => <li key={`${index}-${warning}`}>{warning}</li>)}
+            </ul>
+          </div>
         </div>
       )}
 
@@ -196,7 +222,7 @@ export function OverviewView({
           <div className="setting-group">
             <SettingRow
               title={t("overview.exitNode")}
-              description={t("overview.exitNodeDescription")}
+              description={exitNodeDescription}
               control={
                 <select
                   aria-label={t("overview.exitNode")}
@@ -205,8 +231,16 @@ export function OverviewView({
                   onChange={(event) => onExitNodeChange(event.target.value || null)}
                 >
                   <option value="">{t("overview.doNotUse")}</option>
-                  {snapshot.devices.filter((device) => device.online && device.exitNodeOption).map((device) => (
-                    <option key={device.id} value={device.id}>{device.name}</option>
+                  {exitNodeOptions.length === 0 && (
+                    <option value="__no-approved-exit-node" disabled>{t("overview.exitNodeNoneOption")}</option>
+                  )}
+                  {selectedExitNodeMissing && (
+                    <option value={snapshot.preferences.exitNodeId ?? ""} disabled>{t("overview.exitNodeUnavailable")}</option>
+                  )}
+                  {exitNodeOptions.map((device) => (
+                    <option key={device.id} value={device.id} disabled={!device.online}>
+                      {device.online ? device.name : t("overview.exitNodeOffline", { name: device.name })}
+                    </option>
                   ))}
                 </select>
               }

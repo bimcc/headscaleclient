@@ -1,4 +1,4 @@
-import { Copy, Globe2, Search, Send, Server, Smartphone, UserRound, X } from "lucide-react";
+import { Copy, Globe2, Search, Send, Server, ShieldCheck, Smartphone, UserRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PeerDevice, PingResult } from "../lib/contracts";
 import { EmptyState, IconButton, StatusBadge } from "../components/ui";
@@ -99,6 +99,13 @@ export function DevicesView({
             <span><small>{t("device.currentAccount")}</small><strong className="truncate" title={accountName}>{accountName}</strong></span>
           </div>
         </div>
+        <div className="device-visibility-note" role="note">
+          <ShieldCheck aria-hidden="true" size={17} />
+          <div>
+            <strong>{t("device.visibilityTitle")}</strong>
+            <span>{t("device.visibilityDescription")}</span>
+          </div>
+        </div>
         <div className="toolbar-row">
           <label className="search-field">
             <Search aria-hidden="true" size={18} />
@@ -125,7 +132,7 @@ export function DevicesView({
         </div>
 
         <div className="table-meta">
-          <h2 id="device-list-title">{t("device.list")}</h2>
+          <h2 id="device-list-title">{t("device.visibleList")}</h2>
           <span>{filtered.length} / {devices.length}</span>
         </div>
 
@@ -155,7 +162,10 @@ export function DevicesView({
                   <span className="device-os-icon"><DeviceIcon os={device.os} /></span>
                   <span className="truncate">
                     <strong>{deviceDisplayName(device, t)}</strong>
-                    <small>{device.owner || t("device.unknownOwner")}</small>
+                    <small className="device-owner">
+                      <UserRound aria-hidden="true" size={11} />
+                      <span>{t("device.ownerValue", { owner: device.owner || t("device.unknownOwner") })}</span>
+                    </small>
                   </span>
                 </span>
                 <span className="device-address-summary" role="cell" title={device.addresses.join("\n")}>

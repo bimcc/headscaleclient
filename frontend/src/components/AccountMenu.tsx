@@ -29,13 +29,24 @@ export function AccountMenu({
     const closeOnOutsideClick = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpen(false);
+      rootRef.current?.querySelector<HTMLButtonElement>(".account-button")?.focus();
+    };
     document.addEventListener("pointerdown", closeOnOutsideClick);
-    window.requestAnimationFrame(() => {
+    document.addEventListener("keydown", closeOnEscape);
+    const focusFrame = window.requestAnimationFrame(() => {
       const selected = menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]');
       const first = menuRef.current?.querySelector<HTMLElement>('[role="menuitemradio"], [role="menuitem"]');
       (selected ?? first)?.focus();
     });
-    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
   }, [open]);
 
   const moveFocus = (direction: 1 | -1) => {
@@ -70,11 +81,7 @@ export function AccountMenu({
           aria-label={t("account.switchMenu")}
           ref={menuRef}
           onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              setOpen(false);
-              rootRef.current?.querySelector<HTMLButtonElement>(".account-button")?.focus();
-            } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
               event.preventDefault();
               moveFocus(event.key === "ArrowDown" ? 1 : -1);
             }

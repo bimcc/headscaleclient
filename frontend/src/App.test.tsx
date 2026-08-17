@@ -14,7 +14,10 @@ describe("HeadscaleClient shell", () => {
     expect(screen.getByRole("navigation", { name: "主导航" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "设备" }));
-    expect(screen.getByRole("heading", { name: "设备列表" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "当前网络可见设备" })).toBeInTheDocument();
+    expect(screen.getByText("控制服务器下发的可见节点")).toBeInTheDocument();
+    expect(screen.getByText(/显示不代表拥有或已获准访问/)).toBeInTheDocument();
+    expect(screen.getAllByText("所有者 · lin@example.com").length).toBeGreaterThan(0);
 
     await user.type(screen.getByRole("searchbox", { name: "搜索设备" }), "pixel");
     expect(screen.getByText("pixel-9")).toBeInTheDocument();
@@ -108,7 +111,7 @@ describe("HeadscaleClient shell", () => {
     expect(screen.queryByRole("heading", { name: "在线设备" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "查看在线设备，3 台在线" }));
-    expect(screen.getByRole("heading", { name: "设备列表" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "当前网络可见设备" })).toBeInTheDocument();
   });
 
   it("enables LAN access only after an exit node is selected", async () => {
@@ -126,6 +129,18 @@ describe("HeadscaleClient shell", () => {
     expect(allowLan).toHaveAttribute("aria-checked", "true");
     expect(allowLan.closest(".setting-row")).not.toHaveClass("is-disabled");
     expect(screen.getByText("使用出口节点时仍可访问本地网络")).toBeInTheDocument();
+  });
+
+  it("explains when the control server has not approved an exit node", async () => {
+    const backend = createBackend();
+    const snapshot = createDemoSnapshot();
+    snapshot.devices.forEach((device) => { device.exitNodeOption = false; });
+    vi.spyOn(backend, "getSnapshot").mockResolvedValue(snapshot);
+
+    render(<App backendClient={backend} />);
+
+    expect(await screen.findByText("没有已批准的出口节点；目标设备需先发布出口能力并由控制服务器批准")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "没有已批准的出口节点" })).toBeDisabled();
   });
 
   it("warns when an existing exit-node profile blocks LAN access", async () => {
@@ -153,26 +168,26 @@ describe("HeadscaleClient shell", () => {
     const switchProfile = vi.spyOn(backend, "switchProfile");
     render(<App backendClient={backend} />);
 
-    const accountButton = await screen.findByRole("button", { name: "切换账号，当前 lin@example.com" });
+    const accountButton = await screen.findByRole("button", { name: "切换登录身份，当前 lin@example.com" });
     await user.click(accountButton);
-    expect(screen.getByRole("menu", { name: "账号切换" })).toBeInTheDocument();
+    expect(screen.getByRole("menu", { name: "登录身份切换" })).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("menu", { name: "账号切换" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menu", { name: "登录身份切换" })).not.toBeInTheDocument();
 
     await user.click(accountButton);
     await user.click(screen.getByRole("menuitemradio", { name: /lin\.personal@example\.com/ }));
 
     await waitFor(() => expect(switchProfile).toHaveBeenCalledWith("profile-personal"));
-    expect(await screen.findByRole("button", { name: "切换账号，当前 lin.personal@example.com" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "切换登录身份，当前 lin.personal@example.com" })).toBeInTheDocument();
   });
 
   it("opens detailed account management from the header menu", async () => {
     const user = userEvent.setup();
     render(<App backendClient={createBackend()} />);
 
-    await user.click(await screen.findByRole("button", { name: /切换账号，当前/ }));
-    await user.click(screen.getByRole("menuitem", { name: "管理账号与控制服务器" }));
+    await user.click(await screen.findByRole("button", { name: /切换登录身份，当前/ }));
+    await user.click(screen.getByRole("menuitem", { name: "管理登录身份与控制服务器" }));
 
     expect(screen.getByRole("heading", { name: "控制服务器" })).toBeInTheDocument();
   });
@@ -187,7 +202,7 @@ describe("HeadscaleClient shell", () => {
     expect(screen.getByText("当前网络")).toBeInTheDocument();
     expect(screen.getByText("可达")).toBeInTheDocument();
     expect(screen.queryByText("当前活动网络")).not.toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "账号" })).getByText("1 个账号")).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "登录身份" })).getByText("1 个登录身份")).toBeInTheDocument();
   });
 
   it("opens the requested detailed view from a native tray event", async () => {
@@ -293,12 +308,15 @@ describe("HeadscaleClient shell", () => {
     degraded.runtime.daemon = "ready";
     degraded.runtime.connection = "degraded";
     degraded.runtime.control = "reachable";
+    degraded.healthWarnings = ["UDP is unavailable; peers may use DERP relays."];
     vi.spyOn(backend, "getSnapshot").mockResolvedValue(degraded);
 
     render(<App backendClient={backend} />);
 
     expect(await screen.findByRole("heading", { name: "隧道已连接" })).toBeInTheDocument();
-    expect(screen.getByText("本地网络存在警告")).toBeInTheDocument();
+    expect(screen.getByText("1 项网络警告")).toBeInTheDocument();
+    expect(screen.getByText("网络健康警告（1）")).toBeInTheDocument();
+    expect(screen.getByText("UDP is unavailable; peers may use DERP relays.")).toBeInTheDocument();
     expect(screen.queryByText("控制服务器暂时不可达")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "断开连接" })).toHaveAttribute("aria-checked", "true");
   });

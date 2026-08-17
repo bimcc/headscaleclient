@@ -75,9 +75,26 @@ warning and a direct `Allow LAN access` action. Accept-routes copy warns that an
 advertised subnet overlapping the current physical LAN must be disabled or
 corrected at the control plane.
 
+The exit-node selector distinguishes three server states: no peer has been
+approved as an exit node, approved exit nodes exist but are offline, or online
+eligible peers are selectable. Offline approved peers remain visible but
+disabled. A stale selected node remains identifiable and can be cleared.
+
 The Overview does not duplicate peer rows. The Devices view is the single
 detailed inventory for the active daemon profile; switching the active account
 or control server can replace that entire list.
+
+The Devices heading calls these `Devices visible on this network`. A quiet
+scope notice states that peers are published by the control server and that
+visibility is not ownership or access authorization. Every row labels its
+reported owner explicitly. Account-facing labels use `sign-in identity` where
+the value is a daemon `LoginName`, because it may be a username or an email
+address.
+
+When `tailscaled` reports health warnings, Overview shows the exact current
+warning text beneath the compact connection row and includes it in copied
+diagnostics. The summary badge reports the warning count; it no longer leaves
+the user with only a generic local-network warning.
 
 ## Device paths
 

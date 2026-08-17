@@ -72,6 +72,18 @@ func TestMapSnapshotHandlesNilStatus(t *testing.T) {
 	}
 }
 
+func TestMapSnapshotPreservesHealthWarningDetails(t *testing.T) {
+	t.Parallel()
+
+	snapshot := mapSnapshot(&ipnstate.Status{
+		BackendState: "Running",
+		Health:       []string{" UDP is unavailable; using relays. ", ""},
+	}, &ipn.Prefs{})
+	if len(snapshot.HealthWarnings) != 1 || snapshot.HealthWarnings[0] != "UDP is unavailable; using relays." {
+		t.Fatalf("health warnings = %#v", snapshot.HealthWarnings)
+	}
+}
+
 func TestMapProfilePreservesNormalizedControlURL(t *testing.T) {
 	t.Parallel()
 

@@ -34,6 +34,7 @@ export interface AppSnapshot {
     "source": SnapshotSource;
     "fallbackReason"?: string;
     "runtime": RuntimeState;
+    "healthWarnings": string[] | null;
     "localDevice": LocalDevice;
     "devices": PeerDevice[] | null;
     "endpoints": Endpoint[] | null;

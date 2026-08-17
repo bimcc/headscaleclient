@@ -91,6 +91,12 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   unknown routes from offline peers, and synchronize accurate probe results.
 - [x] UI-022 Add settings-level service repair and an actionable exit-node LAN
   isolation warning; default newly selected exit nodes to LAN access enabled.
+- [x] UI-023 Label peers as current-network-visible rather than account-owned,
+  clarify opaque login identities, and expose exact daemon health warnings.
+- [x] UI-024 Explain empty exit-node eligibility, retain approved offline peers
+  as disabled options, and make stale selections recoverable.
+- [x] UI-025 Make Escape close the header identity menu even before its deferred
+  focus transfer completes.
 
 ## Desktop integration
 

@@ -252,11 +252,12 @@ func mapSnapshot(status *ipnstate.Status, prefs *ipn.Prefs) domain.AppSnapshot {
 		peerCount = len(status.Peer)
 	}
 	snapshot := domain.AppSnapshot{
-		State:         state,
-		DisplayState:  domain.DeriveDisplayState(state),
-		DaemonVersion: daemonVersion,
-		Peers:         make([]domain.PeerSummary, 0, peerCount),
-		Preferences:   mapPreferences(prefs),
+		State:          state,
+		DisplayState:   domain.DeriveDisplayState(state),
+		HealthWarnings: []string{},
+		DaemonVersion:  daemonVersion,
+		Peers:          make([]domain.PeerSummary, 0, peerCount),
+		Preferences:    mapPreferences(prefs),
 		Capabilities: domain.Capabilities{
 			ExitNode:     domain.CapabilitySupported,
 			LANAccess:    domain.CapabilitySupported,
@@ -290,6 +291,11 @@ func mapSnapshot(status *ipnstate.Status, prefs *ipn.Prefs) domain.AppSnapshot {
 	}
 	if status == nil {
 		return snapshot
+	}
+	for _, warning := range status.Health {
+		if warning = strings.TrimSpace(warning); warning != "" {
+			snapshot.HealthWarnings = append(snapshot.HealthWarnings, warning)
+		}
 	}
 	for _, peer := range status.Peer {
 		if peer == nil || peer.ShareeNode {

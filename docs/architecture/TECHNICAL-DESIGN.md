@@ -155,6 +155,7 @@ and server-supplied diagnostic details are data and are never translated.
 - daemon state and version
 - daemon ownership, service state, bundled version, and available fixed actions
 - session and connection state
+- current daemon health-warning details
 - active control server and profile
 - local device identity and addresses
 - peer summaries
@@ -172,6 +173,19 @@ selection when either identity changes. It must not merge peer lists from
 inactive profiles. Peer display names fall back from host name to MagicDNS,
 virtual address, and stable node ID so malformed or partially populated daemon
 records cannot render as anonymous rows.
+
+The peer collection comes only from the active LocalAPI status map. It can
+contain nodes owned by other server users when the control server publishes
+them. The client labels this as visibility, not ownership or authorization;
+Headscale/Tailscale policy and destination filtering remain authoritative.
+Likewise, `ProfileSummary.LoginName` is an opaque login identity. An
+email-shaped value is not treated as proof that an optional Headscale email
+attribute exists.
+
+Non-empty `ipnstate.Status.Health` entries are trimmed and copied through the
+domain and product snapshots. Health entries drive degraded status as before,
+but the frontend also renders their exact text so a transient warning is
+diagnosable instead of being reduced to a boolean.
 
 ## Managed daemon supply chain
 

@@ -12,7 +12,7 @@
 
 - `go test ./...`: passed.
 - `go vet ./...`: passed.
-- Frontend Vitest: 58 tests passed.
+- Frontend Vitest: 59 tests passed.
 - Frontend TypeScript and production build: passed.
 - Generated binding surface: 1 service, 14 methods, 19 models, 5 events.
 - Chinese default, immediate English switching, `document.lang`, and English
@@ -30,6 +30,9 @@
 - Windows lifecycle tests cover current, legacy-managed, and official external
   executable ownership. Application tests verify that service success waits
   for LocalAPI readiness and that selecting an exit node enables LAN access.
+- Snapshot tests verify that exact non-empty daemon health warnings survive the
+  LocalAPI, domain, application, binding, and frontend boundary. Frontend tests
+  cover warning detail rendering and the no-approved-exit-node state.
 
 ## Responsive checks
 
@@ -71,6 +74,12 @@ Chinese and English device details were checked at `960 x 680` and `390 x 844`;
 the recent-path label and a DERP probe result remained inside the drawer with no
 document overflow.
 
+The visible-device scope notice, explicit owner labels, exact health-warning
+panel, and no-approved-exit-node description were checked at `960 x 680` and
+`390 x 844`. Document width matched viewport width in all cases. Approved
+offline exit nodes remain visible but disabled; stale selected nodes remain
+identifiable and can be cleared.
+
 ## Resource review
 
 Static review confirmed that the frontend does not poll. The application owns
@@ -82,6 +91,10 @@ and error state are unchanged. Five unused public scaffold assets and their
 unused font license were removed; Vite no longer copies about 686 KiB of
 unreferenced runtime assets into the embedded frontend.
 
+The account-menu Escape path is handled for the full open interval, including
+the animation frame before focus enters the menu; closing cancels that pending
+focus transfer.
+
 One freshly built native process was started without installation, allowed to
 settle for eight seconds, sampled over the next ten seconds, and then stopped:
 
@@ -90,9 +103,9 @@ settle for eight seconds, sampled over the next ten seconds, and then stopped:
 | Working set | 29.5 MiB |
 | Private memory | 54.5 MiB |
 | CPU delta over 10 seconds | 0.00% of one core |
-| Production frontend JavaScript | 251.22 kB |
-| Production frontend JavaScript, gzip | 77.91 kB |
-| Native executable | 15.64 MiB |
+| Production frontend JavaScript | 255.03 kB |
+| Production frontend JavaScript, gzip | 78.90 kB |
+| Native executable | 15.65 MiB |
 | Windows installer | 23.79 MiB |
 
 This is a single idle sample on one development machine, not a cross-platform
@@ -102,7 +115,7 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `5BD5040CD219F1138CA4D7BDD5987104BC0B9D5914AA280276CC2C75735C6FE8`
+- SHA-256: `15065247201496C6749E9B97CD24CDD65B09D908B3400950571A9D3E67D3478A`
 - Default machine installation directory: `C:\Program Files\BIMCC\HeadscaleClient`
 - A registered installation produces a localized update-or-repair confirmation;
   cancelling exits setup, while continuing preserves product configuration.

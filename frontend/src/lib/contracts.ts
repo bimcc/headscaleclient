@@ -126,6 +126,7 @@ export interface AppSnapshot {
   source: "native" | "demo";
   fallbackReason?: string;
   runtime: RuntimeState;
+  healthWarnings: string[];
   localDevice: LocalDevice;
   devices: PeerDevice[];
   endpoints: Endpoint[];

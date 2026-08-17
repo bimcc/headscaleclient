@@ -45,6 +45,10 @@ The name describes the primary self-hosted use case, not a provider lock.
   connect to them concurrently.
 - Login creates a daemon-owned account profile associated with the selected
   endpoint. Several profiles can remain saved on the device.
+- The profile's login identity is the `LoginName` reported by `tailscaled`.
+  It can be an email address, an OIDC identity, or an ordinary Headscale user
+  name; the client must not infer that an email-shaped value came from an
+  optional server-side email field.
 - The management UI presents this ownership as a master-detail hierarchy:
   saved control servers are the first level, and only the local profiles
   associated with the selected server appear in its account list.
@@ -104,6 +108,11 @@ connection or account state.
 
 - The device page is a live view of the active daemon profile's network map.
   It is not an aggregate inventory across every saved server or account.
+- These are control-server-visible peers, not devices owned by the current
+  identity. A visible peer can have another owner, and visibility alone does
+  not prove that server policy or the destination firewall permits access.
+- Headscale Grants/ACLs and the destination device remain authoritative for
+  access. The desktop client does not edit or bypass that policy.
 - Switching the active profile can replace the full peer list because the new
   profile may belong to a different control server and private network.
 - Virtual `100.x` and IPv6 addresses are assigned inside that profile's

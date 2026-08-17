@@ -93,6 +93,7 @@ type AppSnapshot struct {
 	Sequence       uint64           `json:"sequence"`
 	State          StateAxes        `json:"state"`
 	DisplayState   DisplayState     `json:"displayState"`
+	HealthWarnings []string         `json:"healthWarnings"`
 	DaemonVersion  string           `json:"daemonVersion,omitempty"`
 	ActiveEndpoint *EndpointSummary `json:"activeEndpoint,omitempty"`
 	ActiveProfile  *ProfileSummary  `json:"activeProfile,omitempty"`

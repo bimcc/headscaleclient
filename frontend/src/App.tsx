@@ -230,6 +230,7 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
               onLanguageChange={setLanguage}
               onCopyDiagnostics={() => void copyText(JSON.stringify({
                 runtime: snapshot.runtime,
+                healthWarnings: snapshot.healthWarnings,
                 engine: snapshot.engine,
                 diagnostics: snapshot.diagnostics,
                 preferences: snapshot.preferences,

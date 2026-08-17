@@ -154,6 +154,7 @@ type AppSnapshot struct {
 	Source           SnapshotSource   `json:"source"`
 	FallbackReason   string           `json:"fallbackReason,omitempty"`
 	Runtime          RuntimeState     `json:"runtime"`
+	HealthWarnings   []string         `json:"healthWarnings"`
 	LocalDevice      LocalDevice      `json:"localDevice"`
 	Devices          []PeerDevice     `json:"devices"`
 	Endpoints        []Endpoint       `json:"endpoints"`
