@@ -51,6 +51,10 @@ ManifestDPIAware true
 
 !include "MUI.nsh"
 !include "LogicLib.nsh"
+!include "StrFunc.nsh"
+
+${Using:StrFunc} StrCase
+${Using:StrFunc} StrStr
 
 !ifndef ARG_DAEMON_DIR
     !error "ARG_DAEMON_DIR must point to a verified managed-daemon payload"
@@ -88,6 +92,8 @@ LangString ArchitectureNotSupported ${LANG_SIMPCHINESE} "当前 Windows 架构�
 LangString ArchitectureNotSupported ${LANG_ENGLISH} "This product can't be installed on the current Windows architecture. Supports: ${ARCH}"
 LangString ExistingInstallPrompt ${LANG_SIMPCHINESE} "检测到已安装的 HeadscaleClient。继续将更新或修复现有安装，并保留账号与网络配置。是否继续？"
 LangString ExistingInstallPrompt ${LANG_ENGLISH} "HeadscaleClient is already installed. Continuing will update or repair the installation while preserving account and network configuration. Continue?"
+LangString ApplicationRunning ${LANG_SIMPCHINESE} "HeadscaleClient 仍在运行，安装程序无法更新正在使用的程序文件。请从系统托盘中的 HeadscaleClient 菜单选择“退出”（仅关闭窗口可能会缩小到托盘），确认程序完全退出后点击“重试”。"
+LangString ApplicationRunning ${LANG_ENGLISH} "HeadscaleClient is still running, so setup cannot update the application files in use. Choose Exit from the HeadscaleClient system tray menu (closing the window may only minimize it to the tray), then click Retry after the application has fully exited."
 LangString ServiceInstalling ${LANG_SIMPCHINESE} "正在安装 HeadscaleClient 托管网络服务"
 LangString ServiceInstalling ${LANG_ENGLISH} "Installing the HeadscaleClient managed network service"
 LangString ServiceRepairing ${LANG_SIMPCHINESE} "正在修复 HeadscaleClient 托管网络服务"
@@ -154,6 +160,20 @@ Section
     !insertmacro wails.setShellContext
 
     !insertmacro wails.webview2runtime
+
+    applicationRunningCheck:
+    nsExec::ExecToStack '"$SYSDIR\tasklist.exe" /FI "IMAGENAME eq ${PRODUCT_EXECUTABLE}" /NH /FO CSV'
+    Pop $0
+    Pop $1
+    ${If} $0 == 0
+        ${StrCase} $2 $1 "L"
+        ${StrCase} $3 "${PRODUCT_EXECUTABLE}" "L"
+        ${StrStr} $2 $2 $3
+        ${If} $2 != ""
+            MessageBox MB_ICONEXCLAMATION|MB_RETRYCANCEL "$(ApplicationRunning)" IDRETRY applicationRunningCheck
+            Abort
+        ${EndIf}
+    ${EndIf}
 
     SetOutPath $INSTDIR
     

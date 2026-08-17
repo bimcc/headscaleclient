@@ -126,6 +126,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   localized started, already-running, and genuine failure states.
 - [x] DESK-012 Diagnose Windows service dependency error 1068 with the exact
   upstream Tailscale dependency set instead of suggesting a process conflict.
+- [x] DESK-013 Detect a running HeadscaleClient before replacing application
+  files and provide a localized retry-or-cancel prompt with tray-exit guidance.
 
 ## Resource efficiency
 

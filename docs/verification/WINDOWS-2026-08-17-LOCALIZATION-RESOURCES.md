@@ -118,10 +118,14 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `969B5D3196881977DC042E633C98B8FAE18F610A5B13306F0A95A3A32107BEF9`
+- SHA-256: `4C85112386A77088108368D361643837F453D1B4554A32A4648CFB6C3A990555`
 - Default machine installation directory: `C:\Program Files\BIMCC\HeadscaleClient`
 - A registered installation produces a localized update-or-repair confirmation;
   cancelling exits setup, while continuing preserves product configuration.
+- Before replacing the GUI binary, setup detects a running HeadscaleClient and
+  presents a localized Retry/Cancel prompt. The message explains that closing
+  the window can leave the application in the tray and directs the user to the
+  tray `Exit` command; setup does not expose an unsafe file-ignore path.
 - The installer migrates only a managed service whose executable matches the
   previous default product directory; official or other external Tailscale
   services remain untouched.
