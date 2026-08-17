@@ -70,6 +70,15 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   expose multiple-address semantics, and prevent anonymous device rows.
 - [x] UI-016 Add persistent Chinese and English UI localization with Chinese
   as the default and immediate language switching.
+- [x] UI-017 Clarify current-network setting scope, make LAN access subordinate
+  to exit-node selection, and replace the duplicated Overview peer list with
+  an online-device count linking to Devices.
+- [x] UI-018 Reorganize Settings into general and runtime-diagnostics groups,
+  move product attribution to a dedicated About view, and record upstream
+  copyright and official project links.
+- [x] UI-019 Remove redundant selected-server metadata and status rows, place
+  reachability beside the current-network label, and move account count to the
+  Accounts section header.
 
 ## Desktop integration
 
@@ -133,6 +142,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   account hierarchy, and device-scope changes.
 - [x] 2026-08-17 Verified Chinese/English switching and responsive layouts,
   recorded an idle resource sample, and rebuilt the Windows AMD64 installer.
+- [x] 2026-08-17 Re-verified Overview, network detail, Settings, About, and
+  five-item navigation at 960x680 and 390x844, then rebuilt the Windows AMD64
+  installer.
 - [ ] Complete a separate-profile interactive login against the test Headscale endpoint.
 - [ ] Complete macOS, real-host Linux, signed installer, and clean-machine matrices.
 

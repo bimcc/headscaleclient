@@ -27,7 +27,7 @@ function endpointStatus(
     if (endpoint.status === "unreachable") return { label: t("endpoint.unreachable"), tone: "danger" };
     return { label: t("endpoint.statusUnknown"), tone: "warning" };
   }
-  if (accountCount > 0) return { label: t("endpoint.accountCount", { count: accountCount }), tone: "neutral" };
+  if (accountCount > 0) return { label: t("endpoint.checkOnLogin"), tone: "neutral" };
   return { label: t("common.notLoggedIn"), tone: "neutral" };
 }
 
@@ -366,9 +366,11 @@ export function NetworksView({
                 <div className="endpoint-detail-title-row">
                   <h2 id="selected-endpoint-title" className="truncate" title={selectedEndpoint.name}>{selectedEndpoint.name}</h2>
                   {selectedEndpoint.id === activeEndpointId && <StatusBadge tone="success">{t("endpoint.currentNetwork")}</StatusBadge>}
+                  <StatusBadge tone={selectedEndpoint.id === activeEndpointId ? selectedStatus?.tone : "neutral"}>
+                    {selectedEndpoint.id === activeEndpointId ? selectedStatus?.label : t("endpoint.checkOnLogin")}
+                  </StatusBadge>
                 </div>
                 <p className="mono truncate" title={selectedEndpoint.url}>{selectedEndpoint.url}</p>
-                <span className="endpoint-detail-kind">{endpointKindLabel(selectedEndpoint.kind, t)} · {t("endpoint.accountCount", { count: selectedProfiles.length })}</span>
               </div>
             </div>
             <div className="endpoint-detail-actions">
@@ -385,14 +387,6 @@ export function NetworksView({
               {!selectedEndpoint.builtIn && <IconButton label={t("endpoint.deleteNamed", { name: selectedEndpoint.name })} icon={Trash2} disabled={loginBusyId !== null} onClick={() => setDeleteEndpoint(selectedEndpoint)} />}
             </div>
           </header>
-
-          <div className="endpoint-detail-status">
-            <span className={`presence-dot ${selectedEndpoint.id === activeEndpointId ? "online" : "offline"}`} aria-hidden="true" />
-            <span>{selectedEndpoint.id === activeEndpointId ? t("endpoint.activeNetwork") : t("endpoint.savedNetwork")}</span>
-            <StatusBadge tone={selectedStatus?.tone ?? "neutral"}>
-              {selectedEndpoint.id === activeEndpointId ? selectedStatus?.label : selectedEndpoint.status === "unchecked" ? t("endpoint.checkOnLogin") : selectedStatus?.label}
-            </StatusBadge>
-          </div>
 
           {loginFailure?.endpointId === selectedEndpoint.id && (
             <div className="login-flow login-failure" role="alert">
@@ -423,6 +417,7 @@ export function NetworksView({
                 <h2 id="profiles-title">{t("profile.accounts")}</h2>
                 <p>{t("profile.scopeHint")}</p>
               </div>
+              <StatusBadge tone="neutral">{t("endpoint.accountCount", { count: selectedProfiles.length })}</StatusBadge>
             </header>
             {selectedProfiles.length === 0 ? (
               <EmptyState title={t("profile.none")} message={t("profile.noneHint")} action={<button className="button secondary with-icon" type="button" onClick={() => void login(selectedEndpoint.id)}><LogIn aria-hidden="true" size={16} /> {t("endpoint.login")}</button>} />

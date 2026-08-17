@@ -15,17 +15,23 @@ The first viewport answers three questions:
 
 ## Navigation
 
-The main navigation contains four destinations:
+The main navigation contains five destinations:
 
 | View | Purpose |
 | --- | --- |
 | Overview | Connection, current identity, local addresses, quick preferences |
 | Devices | Searchable peer list, details, copy address, ping |
 | Networks | Control servers and daemon login profiles |
-| Settings | Application, connection, notification, update, and diagnostics settings |
+| Settings | General desktop preferences plus local-service runtime diagnostics |
+| About | Product version, publisher, independence statement, and upstream notices |
 
 Diagnostics is reached from an error banner or Settings. It does not occupy a
 permanent navigation slot.
+
+Settings uses two unambiguous groups: General settings contains interactive
+desktop preferences, while Runtime & diagnostics contains daemon status,
+technical values, and the copy-summary action. Product attribution does not
+appear as a settings footer; it belongs to the separate About view.
 
 ## Networks and accounts
 
@@ -42,13 +48,25 @@ The Networks view separates two related lists:
 The view always states that multiple accounts may be saved while only one
 network can be active.
 
+The selected-server heading places `Current network` and reachability badges
+beside the server name. It does not repeat the server kind or account count
+from the left list. The account count belongs to the Accounts section header;
+there is no separate status strip between server actions and accounts.
+
 ## Overview composition
 
-1. Compact connection row with state, network, account, and a stable-size toggle.
+1. Compact connection row with state, network, account, online-device count,
+   a link to Devices, and a stable-size toggle.
 2. Persistent alert only for actionable conditions.
 3. Local device facts with individual copy actions.
-4. Setting rows for exit node, LAN access, DNS, routes, and shields-up.
-5. At most five recent online devices with a link to the full list.
+4. Current-network settings with an explicit control-server and account scope.
+5. Setting rows for exit node, DNS, routes, and shields-up. LAN access is
+   visually subordinate to exit-node selection and remains unavailable until
+   an exit node is selected.
+
+The Overview does not duplicate peer rows. The Devices view is the single
+detailed inventory for the active daemon profile; switching the active account
+or control server can replace that entire list.
 
 ## State language
 
@@ -111,5 +129,5 @@ dimensions so state changes do not shift the surrounding layout.
 `AppShell`, `PrimaryNavigation`, `ConnectionControl`, `PersistentAlert`,
 `LocalDeviceSummary`, `QuickPreferences`, `DeviceTable`, `DeviceDetails`,
 `EndpointList`, `EndpointDialog`, `ProfileList`, `LoginFlow`, `SettingRow`,
-`DaemonHealthPanel`, `DiagnosticsDialog`, `EmptyState`, `Skeleton`,
+`DaemonHealthPanel`, `DiagnosticsDialog`, `AboutView`, `EmptyState`, `Skeleton`,
 `ToastRegion`, and `ConfirmDialog`.

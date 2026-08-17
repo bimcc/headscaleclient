@@ -56,6 +56,24 @@ describe("HeadscaleClient shell", () => {
     await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "false"));
   });
 
+  it("groups settings by purpose and keeps product attribution on About", async () => {
+    const user = userEvent.setup();
+    render(<App backendClient={createBackend()} />);
+
+    await screen.findByRole("heading", { name: "服务不可用" });
+    await user.click(screen.getByRole("button", { name: "设置" }));
+
+    expect(screen.getByRole("heading", { name: "常规设置" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "运行与诊断" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "应用" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Powered by BIMCC., Ltd.")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "关于" }));
+    expect(screen.getByText("BIMCC., Ltd.")).toBeInTheDocument();
+    expect(screen.getByText(/Tailscale Inc\. 及贡献者/)).toBeInTheDocument();
+    expect(screen.getByText(/Headscale 开源项目版权归 Juan Font/)).toBeInTheDocument();
+  });
+
   it("defaults to Chinese and switches the application to English", async () => {
     const user = userEvent.setup();
     const backend = createBackend();
@@ -70,8 +88,40 @@ describe("HeadscaleClient shell", () => {
     await waitFor(() => expect(setLanguage).toHaveBeenCalledWith("en-US"));
     expect(await screen.findByRole("heading", { name: "Settings", level: 1 })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
-    expect(screen.getByText("Powered by BIMCC., Ltd.")).toBeInTheDocument();
+    expect(screen.queryByText("Powered by BIMCC., Ltd.")).not.toBeInTheDocument();
     expect(document.documentElement.lang).toBe("en-US");
+
+    await user.click(screen.getByRole("button", { name: "About" }));
+    expect(screen.getByRole("heading", { name: "HeadscaleClient" })).toBeInTheDocument();
+    expect(screen.getByText("Version 0.1.0-dev")).toBeInTheDocument();
+    expect(screen.getByText("BIMCC., Ltd.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open the official Tailscale website at tailscale.com" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open the official Headscale website at headscale.net" })).toBeInTheDocument();
+  });
+
+  it("opens the device list from the compact online-device count", async () => {
+    const user = userEvent.setup();
+    render(<App backendClient={createBackend()} />);
+
+    await screen.findByRole("heading", { name: "服务不可用" });
+    expect(screen.queryByRole("heading", { name: "在线设备" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "查看在线设备，3 台在线" }));
+    expect(screen.getByRole("heading", { name: "设备列表" })).toBeInTheDocument();
+  });
+
+  it("enables LAN access only after an exit node is selected", async () => {
+    const user = userEvent.setup();
+    render(<App backendClient={createBackend()} />);
+
+    await screen.findByRole("heading", { name: "服务不可用" });
+    const allowLan = screen.getByRole("switch", { name: "允许局域网访问" });
+    expect(allowLan).toBeDisabled();
+    expect(screen.getByText("选择出口节点后可用")).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "出口节点" }), "peer-nas");
+    await waitFor(() => expect(allowLan).toBeEnabled());
+    expect(screen.getByText("使用出口节点时仍可访问本地网络")).toBeInTheDocument();
   });
 
   it("switches saved profiles from the header account menu", async () => {
@@ -102,6 +152,19 @@ describe("HeadscaleClient shell", () => {
     await user.click(screen.getByRole("menuitem", { name: "管理账号与控制服务器" }));
 
     expect(screen.getByRole("heading", { name: "控制服务器" })).toBeInTheDocument();
+  });
+
+  it("keeps server status in the detail heading and account count with accounts", async () => {
+    const user = userEvent.setup();
+    render(<App backendClient={createBackend()} />);
+
+    await screen.findByRole("heading", { name: "服务不可用" });
+    await user.click(screen.getByRole("button", { name: "网络与账号" }));
+
+    expect(screen.getByText("当前网络")).toBeInTheDocument();
+    expect(screen.getByText("可达")).toBeInTheDocument();
+    expect(screen.queryByText("当前活动网络")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "账号" })).getByText("1 个账号")).toBeInTheDocument();
   });
 
   it("opens the requested detailed view from a native tray event", async () => {

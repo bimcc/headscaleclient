@@ -11,7 +11,7 @@
 
 - `go test ./...`: passed.
 - `go vet ./...`: passed.
-- Frontend Vitest: 52 tests passed.
+- Frontend Vitest: 56 tests passed.
 - Frontend TypeScript and production build: passed.
 - Generated binding surface: 1 service, 14 methods, 19 models, 5 events.
 - Chinese default, immediate English switching, `document.lang`, and English
@@ -25,10 +25,20 @@ The production frontend was inspected in the local browser preview.
 | --- | --- | --- |
 | 960 x 680 | Chinese | No document or control overflow |
 | 960 x 680 | English | No document or control overflow |
-| 390 x 844 | English | Settings, networks, and devices have no document or control overflow |
+| 390 x 844 | Chinese | Overview, networks, Settings, and About have no document or control overflow |
+| 390 x 844 | English | Overview, Settings, and About have no document or control overflow |
 
 The narrow control-server selector retains its intentional horizontal list
 scroll. The page itself does not scroll horizontally.
+
+The review also confirmed that Overview uses a compact online-device count
+instead of a duplicated peer list, LAN access is disabled until an exit node is
+selected, and the current server/account scope is visible. The selected-server
+detail places current-network and reachability badges beside the name, removes
+the former status strip, and places its account count in the Accounts header.
+Settings has General and Runtime & diagnostics groups; product and upstream
+attribution appears only in the bilingual About view. The five navigation
+labels and the mobile device icon plus online count fit at 390 px.
 
 ## Resource review
 
@@ -49,9 +59,9 @@ settle for eight seconds, sampled over the next ten seconds, and then stopped:
 | Working set | 29.5 MiB |
 | Private memory | 54.5 MiB |
 | CPU delta over 10 seconds | 0.00% of one core |
-| Production frontend JavaScript | 246.02 kB |
-| Production frontend JavaScript, gzip | 76.39 kB |
-| Native executable | 15.61 MiB |
+| Production frontend JavaScript | 248.52 kB |
+| Production frontend JavaScript, gzip | 77.30 kB |
+| Native executable | 15.62 MiB |
 | Windows installer | 23.77 MiB |
 
 This is a single idle sample on one development machine, not a cross-platform
@@ -61,7 +71,7 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `26EB95680F1507526BCD91EB94E53FE634EFB2D9D71CB4B7831EC0DD4710A89E`
+- SHA-256: `C79C64F033E7EBE2127CDC5809243D21A78170FE7DF4D2B81E44429B76AA9784`
 - Installer company metadata: `BIMCC., Ltd.`
 - Installer copyright: `(c) 2026 BIMCC., Ltd.`
-- In-app attribution: `Powered by BIMCC., Ltd.`
+- In-app publisher attribution: About view, `BIMCC., Ltd.`

@@ -14,6 +14,7 @@ import type {
   ThemePreference,
 } from "./lib/contracts";
 import { createTranslator, I18nProvider, type Translate } from "./lib/i18n";
+import { AboutView } from "./views/AboutView";
 import { DevicesView } from "./views/DevicesView";
 import { NetworksView } from "./views/NetworksView";
 import { OverviewView } from "./views/OverviewView";
@@ -229,6 +230,9 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
               onLanguageChange={setLanguage}
               onCopyDiagnostics={() => void copyText(JSON.stringify({ runtime: snapshot.runtime, engine: snapshot.engine, diagnostics: snapshot.diagnostics }, null, 2), t("settings.summaryCopied"))}
             />
+          )}
+          {view === "about" && (
+            <AboutView version={snapshot.diagnostics.appVersion} onOpenURL={openExternalURL} />
           )}
         </div>
       </main>

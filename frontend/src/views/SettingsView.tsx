@@ -55,8 +55,8 @@ export function SettingsView({
       <section className="section-block" aria-labelledby="application-settings-title">
         <header className="section-header">
           <div>
-            <h2 id="application-settings-title">{t("settings.application")}</h2>
-            <p>{t("settings.applicationHint")}</p>
+            <h2 id="application-settings-title">{t("settings.general")}</h2>
+            <p>{t("settings.generalHint")}</p>
           </div>
         </header>
         <div className="setting-list">
@@ -94,21 +94,24 @@ export function SettingsView({
         </div>
       </section>
 
-      <section className="section-block" aria-labelledby="daemon-health-title">
+      <section className="section-block" aria-labelledby="runtime-diagnostics-title">
         <header className="section-header">
           <div>
-            <h2 id="daemon-health-title">{t("settings.localService")}</h2>
-            <p>tailscaled / LocalAPI</p>
+            <h2 id="runtime-diagnostics-title">{t("settings.runtimeDiagnostics")}</h2>
+            <p>{t("settings.runtimeDiagnosticsHint")}</p>
           </div>
-          <StatusBadge tone={runtime.daemon === "ready" ? "success" : "danger"}>{t(daemonLabelKeys[runtime.daemon])}</StatusBadge>
+          <div className="section-actions">
+            <StatusBadge tone={runtime.daemon === "ready" ? "success" : "danger"}>{t(daemonLabelKeys[runtime.daemon])}</StatusBadge>
+            <button className="button secondary with-icon" type="button" onClick={onCopyDiagnostics}>
+              <Clipboard aria-hidden="true" size={17} /> {t("settings.copySummary")}
+            </button>
+          </div>
         </header>
         <dl className="diagnostics-grid">
-          <div><dt>Client</dt><dd>{diagnostics.appVersion}</dd></div>
           <div><dt>Daemon</dt><dd>{diagnostics.daemonVersion}</dd></div>
           <div><dt>{t("settings.engineSource")}</dt><dd>{t(engineLabelKeys[engine.ownership])}</dd></div>
           <div><dt>{t("settings.bundledVersion")}</dt><dd>{engine.bundledVersion || t("common.notProvided")}</dd></div>
           <div><dt>LocalAPI</dt><dd>{diagnostics.localApi}</dd></div>
-          <div><dt>Wails</dt><dd>{diagnostics.wailsVersion}</dd></div>
           <div><dt>{t("settings.platform")}</dt><dd>{diagnostics.platform}</dd></div>
         </dl>
         {runtime.daemon !== "ready" && (
@@ -119,18 +122,6 @@ export function SettingsView({
         )}
       </section>
 
-      <section className="section-block" aria-labelledby="diagnostics-title">
-        <header className="section-header compact-header">
-          <div>
-            <h2 id="diagnostics-title">{t("settings.diagnostics")}</h2>
-            <p>{t("settings.diagnosticsHint")}</p>
-          </div>
-          <button className="button secondary with-icon" type="button" onClick={onCopyDiagnostics}>
-            <Clipboard aria-hidden="true" size={17} /> {t("settings.copySummary")}
-          </button>
-        </header>
-      </section>
-      <footer className="product-credit">{t("settings.poweredBy")}</footer>
     </div>
   );
 }

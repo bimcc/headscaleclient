@@ -78,6 +78,15 @@ Daily interaction is split deliberately between two surfaces:
 - The main window is the detailed surface. It owns endpoint editing, login,
   logout confirmation, diagnostics, device inspection, and all explanatory
   states.
+- The About view owns product version, BIMCC publisher information,
+  independence language, and upstream Tailscale and Headscale attribution with
+  official project links.
+
+The main-window Overview exposes the current profile's online-device count as
+a compact link to Devices instead of duplicating a partial peer list. Its
+network settings state the active control-server and account scope explicitly;
+LAN access is an exit-node sub-option and cannot be changed without an exit
+node.
 
 Both surfaces consume the same application snapshot and call the same
 serialized application service. The tray never maintains an independent

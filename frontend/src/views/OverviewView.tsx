@@ -1,15 +1,14 @@
 import {
   AlertTriangle,
-  ArrowRight,
   CheckCircle2,
   Copy,
   Laptop,
+  Monitor,
   Radio,
   ServerOff,
 } from "lucide-react";
 import type {
   AppSnapshot,
-  PeerDevice,
   PreferenceKey,
   RuntimeState,
 } from "../lib/contracts";
@@ -43,28 +42,6 @@ function connectionSummary(runtime: RuntimeState, t: Translate): { label: string
   return { label: t("connection.notConnected"), detail: t("connection.tunnelStopped"), tone: "neutral" };
 }
 
-function DeviceRow({ device, onCopy }: { device: PeerDevice; onCopy: (value: string) => void }) {
-  const { t } = useI18n();
-  return (
-    <div className="compact-device-row">
-      <span className={`presence-dot ${device.online ? "online" : "offline"}`} aria-hidden="true" />
-      <div className="device-primary truncate" title={device.name}>
-        <strong>{device.name}</strong>
-        <span>{device.os}</span>
-      </div>
-      <span className="mono device-address">{device.addresses[0]}</span>
-      <span className="device-path">
-        {device.connectionType === "direct"
-          ? t("device.direct")
-          : device.connectionType === "relay"
-            ? `${t("device.relay")} · ${device.relayRegion}`
-            : device.lastSeen}
-      </span>
-      <IconButton label={t("device.copyAddress", { name: device.name })} icon={Copy} onClick={() => onCopy(device.addresses[0])} />
-    </div>
-  );
-}
-
 export function OverviewView({
   snapshot,
   busy,
@@ -88,7 +65,9 @@ export function OverviewView({
   const status = connectionSummary(snapshot.runtime, t);
   const endpoint = snapshot.endpoints.find((item) => item.id === snapshot.activeEndpointId);
   const profile = snapshot.profiles.find((item) => item.id === snapshot.activeProfileId);
-  const recentDevices = snapshot.devices.filter((item) => item.online).slice(0, 5);
+  const endpointName = endpoint?.name ?? t("network.noneSelected");
+  const accountName = profile?.account ?? t("account.noneSelected");
+  const onlineDeviceCount = snapshot.devices.filter((item) => item.online).length;
   const isTunnelRunning = ["running", "degraded"].includes(snapshot.runtime.connection);
   const canEnsureDaemon = snapshot.engine.canInstall || snapshot.engine.canStart;
   const daemonActionLabel = snapshot.engine.canInstall ? t("daemon.install") : t("daemon.start");
@@ -110,10 +89,23 @@ export function OverviewView({
             <h2 id="connection-title">{status.label}</h2>
             <StatusBadge tone={status.tone}>{status.detail}</StatusBadge>
           </div>
-          <p className="truncate" title={`${endpoint?.name ?? t("network.noneSelected")} · ${profile?.account ?? t("account.noneSelected")}`}>
-            {endpoint?.name ?? t("network.noneSelected")} · {profile?.account ?? t("account.noneSelected")}
+          <p className="truncate" title={`${endpointName} · ${accountName}`}>
+            {endpointName} · {accountName}
           </p>
         </div>
+        <button
+          className="online-device-shortcut"
+          type="button"
+          title={t("overview.viewOnlineDevices", { count: onlineDeviceCount })}
+          aria-label={t("overview.viewOnlineDevices", { count: onlineDeviceCount })}
+          onClick={onShowDevices}
+        >
+          <Monitor aria-hidden="true" size={17} />
+          <span className="online-device-copy" aria-hidden="true">
+            <span className="online-device-count">{onlineDeviceCount}</span>
+            <span className="online-device-suffix"> {t("overview.onlineSuffix")}</span>
+          </span>
+        </button>
         <Toggle
           label={isTunnelRunning ? t("connection.disconnect") : t("connection.connect")}
           checked={isTunnelRunning}
@@ -175,8 +167,8 @@ export function OverviewView({
       <section className="section-block" aria-labelledby="preferences-title">
         <header className="section-header">
           <div>
-            <h2 id="preferences-title">{t("overview.preferences")}</h2>
-            <p>{t("overview.currentAccountScope")}</p>
+            <h2 id="preferences-title">{t("overview.networkSettings")}</h2>
+            <p>{t("overview.networkSettingsScope", { network: endpointName, account: accountName })}</p>
           </div>
         </header>
         <div className="setting-list">
@@ -199,8 +191,9 @@ export function OverviewView({
           />
           <SettingRow
             title={t("overview.allowLAN")}
-            description={t("overview.allowLANDescription")}
-            control={<Toggle label={t("overview.allowLAN")} checked={snapshot.preferences.allowLanAccess} disabled={busy === "allowLanAccess"} onChange={(value) => onPreferenceChange("allowLanAccess", value)} />}
+            description={snapshot.preferences.exitNodeId ? t("overview.allowLANDescription") : t("overview.allowLANRequiresExitNode")}
+            nested
+            control={<Toggle label={t("overview.allowLAN")} checked={snapshot.preferences.allowLanAccess} disabled={busy === "allowLanAccess" || !snapshot.preferences.exitNodeId} onChange={(value) => onPreferenceChange("allowLanAccess", value)} />}
           />
           <SettingRow
             title={t("overview.magicDNS")}
@@ -220,20 +213,6 @@ export function OverviewView({
         </div>
       </section>
 
-      <section className="section-block" aria-labelledby="recent-title">
-        <header className="section-header">
-          <div>
-            <h2 id="recent-title">{t("overview.onlineDevices")}</h2>
-            <p>{t("overview.reachableCount", { count: recentDevices.length })}</p>
-          </div>
-          <button className="button quiet with-icon" type="button" onClick={onShowDevices}>
-            {t("overview.viewAll")} <ArrowRight aria-hidden="true" size={17} />
-          </button>
-        </header>
-        <div className="compact-device-list">
-          {recentDevices.map((device) => <DeviceRow key={device.id} device={device} onCopy={onCopy} />)}
-        </div>
-      </section>
     </div>
   );
 }

@@ -220,6 +220,12 @@ p {
   margin-top: 18px;
 }
 
+.navigation-utility {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
 .navigation-item {
   display: flex;
   align-items: center;
@@ -256,7 +262,7 @@ p {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  margin-top: auto;
+  margin-top: 0;
   padding: 10px 8px 2px;
   color: var(--text-muted);
   font-size: 12px;
@@ -468,7 +474,7 @@ p {
 
 .connection-strip {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 44px;
+  grid-template-columns: 42px minmax(0, 1fr) auto 44px;
   align-items: center;
   gap: 12px;
   min-height: 74px;
@@ -524,6 +530,35 @@ p {
   margin-top: 4px;
   color: var(--text-muted);
   font-size: 12.5px;
+}
+
+.online-device-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 98px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.online-device-shortcut:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.online-device-copy {
+  display: inline-flex;
+  align-items: baseline;
 }
 
 .status-badge {
@@ -736,6 +771,22 @@ p {
   gap: 24px;
   min-height: 58px;
   border-bottom: 1px solid var(--line);
+}
+
+.setting-row.is-nested {
+  position: relative;
+  padding-left: 20px;
+}
+
+.setting-row.is-nested::before {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 5px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+  content: "";
 }
 
 .setting-copy {
@@ -1267,8 +1318,7 @@ select {
 
 .endpoint-sidebar-header,
 .endpoint-detail-header,
-.endpoint-detail-title-row,
-.endpoint-detail-status {
+.endpoint-detail-title-row {
   display: flex;
   align-items: center;
 }
@@ -1286,8 +1336,7 @@ select {
   font-weight: 700;
 }
 
-.endpoint-sidebar-header p,
-.endpoint-detail-kind {
+.endpoint-sidebar-header p {
   margin-top: 3px;
   color: var(--text-muted);
   font-size: 12px;
@@ -1373,6 +1422,7 @@ select {
 }
 
 .endpoint-detail-title-row {
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
 }
@@ -1396,18 +1446,6 @@ select {
 .endpoint-detail-actions .icon-button {
   width: 36px;
   min-width: 36px;
-}
-
-.endpoint-detail-status {
-  gap: 8px;
-  min-height: 46px;
-  border-bottom: 1px solid var(--line);
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.endpoint-detail-status .status-badge {
-  margin-left: auto;
 }
 
 .endpoint-accounts {
@@ -1609,11 +1647,119 @@ select {
   max-width: 880px;
 }
 
-.product-credit {
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.about-view {
+  max-width: 880px;
+}
+
+.about-product {
+  padding: 8px 0 0;
+}
+
+.about-product-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.about-product-heading h2 {
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.about-product-heading p,
+.about-independence,
+.upstream-row p {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.about-product-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: 8px;
+  background: #293638;
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .about-product-mark {
+  background: #80bcb3;
+  color: #18201f;
+}
+
+.about-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+  margin: 18px 0 0;
+}
+
+.about-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+
+.about-facts dt {
   color: var(--text-muted);
   font-size: 12px;
-  padding: 2px 4px 8px;
-  text-align: center;
+}
+
+.about-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.about-independence {
+  max-width: 760px;
+  margin-top: 14px;
+}
+
+.upstream-list {
+  width: 100%;
+}
+
+.upstream-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  min-height: 94px;
+  border-bottom: 1px solid var(--line);
+}
+
+.upstream-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 4px;
+}
+
+.upstream-title h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.upstream-title span {
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.upstream-link {
+  min-width: 140px;
 }
 
 .diagnostics-grid {
@@ -1833,7 +1979,8 @@ select {
     position: fixed;
     inset: auto 0 0;
     z-index: 30;
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     height: calc(58px + env(safe-area-inset-bottom));
     padding: 0 6px env(safe-area-inset-bottom);
     border-top: 1px solid var(--line);
@@ -1847,11 +1994,11 @@ select {
   }
 
   .navigation-items {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
-    height: 58px;
-    margin: 0;
+    display: contents;
+  }
+
+  .navigation-utility {
+    display: contents;
   }
 
   .navigation-item {
@@ -1952,7 +2099,7 @@ select {
   }
 
   .connection-strip {
-    grid-template-columns: 38px minmax(0, 1fr) 44px;
+    grid-template-columns: 38px minmax(0, 1fr) auto 44px;
     min-height: 70px;
     padding: 10px;
   }
@@ -1963,6 +2110,18 @@ select {
   }
 
   .connection-heading .status-badge {
+    display: none;
+  }
+
+  .online-device-shortcut {
+    gap: 4px;
+    min-width: 48px;
+    width: 48px;
+    height: 44px;
+    padding: 0 6px;
+  }
+
+  .online-device-suffix {
     display: none;
   }
 
@@ -2001,6 +2160,28 @@ select {
   .setting-row {
     gap: 12px;
     min-height: 62px;
+  }
+
+  .section-actions {
+    gap: 6px;
+  }
+
+  .section-actions .status-badge {
+    display: none;
+  }
+
+  .about-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .upstream-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px 0;
+  }
+
+  .upstream-link {
+    justify-self: start;
   }
 
   .setting-description {
