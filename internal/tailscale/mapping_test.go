@@ -106,7 +106,7 @@ func TestMapPeerConnection(t *testing.T) {
 		{name: "direct", peer: &ipnstate.PeerStatus{Online: true, CurAddr: "192.0.2.1:41641", Relay: "hkg"}, connection: domain.PeerConnectionDirect},
 		{name: "derp relay", peer: &ipnstate.PeerStatus{Online: true, Relay: "hkg"}, connection: domain.PeerConnectionRelay, relayRegion: "hkg"},
 		{name: "peer relay", peer: &ipnstate.PeerStatus{Online: true, PeerRelay: "100.64.0.2:1234:vni:1"}, connection: domain.PeerConnectionRelay},
-		{name: "online without route", peer: &ipnstate.PeerStatus{Online: true}, connection: domain.PeerConnectionOffline},
+		{name: "online without route", peer: &ipnstate.PeerStatus{Online: true}, connection: domain.PeerConnectionUnknown},
 	}
 
 	for _, test := range tests {

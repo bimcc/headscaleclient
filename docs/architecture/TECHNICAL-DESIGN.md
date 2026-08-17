@@ -40,6 +40,7 @@ GetSnapshot() -> AppSnapshot
 EnsureDaemon() -> AppSnapshot
 SetRunning(bool) -> AppSnapshot
 PatchPreferences(PreferencePatch) -> AppSnapshot
+PingDevice(deviceID) -> PingResult
 ListProfiles() -> ProfileCollection
 SwitchProfile(profileID) -> AppSnapshot
 Logout() -> AppSnapshot
@@ -65,6 +66,24 @@ fetches a full snapshot when it detects a gap.
 
 Desktop presentation also uses `app:navigate` with a typed view target. It is
 a local window-navigation request, not a sequenced product-state event.
+
+## Peer route probing
+
+Peer route status is a best-effort snapshot. `PeerStatus.CurAddr` is mapped to
+Direct, DERP or peer-relay metadata is mapped to Relay, and an online peer with
+neither is mapped to Unknown rather than Offline.
+
+`PingDevice` uses `PingDisco`, matching the route-reporting mode of the official
+Tailscale CLI. It makes at most three probes with a short bounded interval and
+stops immediately when a direct endpoint is reported. A DERP region or peer
+relay is Relay; a direct endpoint is Direct; missing route fields are Unknown.
+TSMP is not used for route classification because Tailscale `v1.102.2` does not
+populate endpoint or DERP fields for TSMP responses.
+
+After a successful probe, the application composes and emits a new full
+snapshot. The measured route and latency are applied to the matching peer
+before publication, preventing a successful direct probe from leaving a stale
+relay badge in the WebView or tray.
 
 ## Desktop quick surfaces
 
@@ -274,6 +293,8 @@ than hostname matching.
 - Inject `local.Client.Transport` to verify methods, paths, JSON, and status mapping.
 - Exercise 204, 403, 412, malformed JSON, cancellation, and stream EOF.
 - Verify login watches before issuing Start/Login calls.
+- Verify route probing uses Disco, stops on direct, bounds relay attempts, and
+  never treats missing route metadata as direct.
 
 ### Integration tests
 

@@ -160,6 +160,7 @@ func TestGetSnapshotPreservesPeerConnectionMetadata(t *testing.T) {
 	raw.Peers = []domain.PeerSummary{
 		{DeviceIdentity: domain.DeviceIdentity{ID: "direct", Addresses: []string{}}, Online: true, ConnectionType: domain.PeerConnectionDirect, ExitNodeOption: true},
 		{DeviceIdentity: domain.DeviceIdentity{ID: "relay", Addresses: []string{}}, Online: true, ConnectionType: domain.PeerConnectionRelay, RelayRegion: "hkg"},
+		{DeviceIdentity: domain.DeviceIdentity{ID: "unknown", Addresses: []string{}}, Online: true, ConnectionType: domain.PeerConnectionUnknown},
 		{DeviceIdentity: domain.DeviceIdentity{ID: "offline", Addresses: []string{}}, ConnectionType: domain.PeerConnectionOffline},
 	}
 	service := mustService(t, &fakeDaemon{snapshot: raw}, newFakeStore(), nil)
@@ -174,6 +175,7 @@ func TestGetSnapshotPreservesPeerConnectionMetadata(t *testing.T) {
 	}{
 		"direct":  {connection: ConnectionTypeDirect},
 		"relay":   {connection: ConnectionTypeRelay, relay: "hkg"},
+		"unknown": {connection: ConnectionTypeUnknown},
 		"offline": {connection: ConnectionTypeOffline},
 	}
 	for _, device := range snapshot.Devices {
@@ -226,6 +228,53 @@ func TestSetPreferenceUsesOptionalPatchAndPublishesSnapshot(t *testing.T) {
 	payload, ok := events[0].payload.(SnapshotChangedEvent)
 	if !ok || payload.Sequence != 1 {
 		t.Fatalf("snapshot event payload = %#v", events[0].payload)
+	}
+}
+
+func TestPingDevicePublishesTheMeasuredPath(t *testing.T) {
+	t.Parallel()
+
+	raw := healthyDomainSnapshot()
+	raw.Peers = []domain.PeerSummary{{
+		DeviceIdentity: domain.DeviceIdentity{ID: "peer-1", Addresses: []string{"100.64.0.2"}},
+		Online:         true,
+		ConnectionType: domain.PeerConnectionRelay,
+		RelayRegion:    "hkg",
+	}}
+	daemon := &fakeDaemon{
+		snapshot: raw,
+		pingResult: tailscale.PingResult{
+			DeviceID:  "peer-1",
+			LatencyMS: 24,
+			Via:       tailscale.PingViaDirect,
+			Endpoint:  "203.0.113.8:41641",
+		},
+	}
+	sink := &recordingSink{}
+	service := mustService(t, daemon, newFakeStore(), sink)
+
+	result, err := service.PingDevice("peer-1")
+	if err != nil {
+		t.Fatalf("PingDevice() error: %v", err)
+	}
+	if result.Via != tailscale.PingViaDirect {
+		t.Fatalf("result route = %q, want direct", result.Via)
+	}
+
+	events := sink.snapshot()
+	if len(events) != 1 || events[0].name != EventSnapshotChanged {
+		t.Fatalf("events = %+v, want one snapshot event", events)
+	}
+	payload, ok := events[0].payload.(SnapshotChangedEvent)
+	if !ok || len(payload.Snapshot.Devices) != 1 {
+		t.Fatalf("snapshot event payload = %#v", events[0].payload)
+	}
+	device := payload.Snapshot.Devices[0]
+	if device.ConnectionType != ConnectionTypeDirect || device.RelayRegion != "" {
+		t.Fatalf("refreshed path = (%q, %q), want direct", device.ConnectionType, device.RelayRegion)
+	}
+	if device.LatencyMS == nil || *device.LatencyMS != 24 {
+		t.Fatalf("refreshed latency = %v, want 24", device.LatencyMS)
 	}
 }
 

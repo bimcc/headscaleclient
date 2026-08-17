@@ -68,6 +68,19 @@ The Overview does not duplicate peer rows. The Devices view is the single
 detailed inventory for the active daemon profile; switching the active account
 or control server can replace that entire list.
 
+## Device paths
+
+The device list labels its status-derived route as `Recent path`, not an
+ever-current guarantee. A direct endpoint means Direct; a DERP or peer-relay
+route means Relay; an online peer with no route evidence means Path unknown and
+must never be presented as Offline.
+
+The Ping action performs a bounded route probe. Its result is labelled `Probe
+result`, uses only explicit direct-endpoint or relay evidence, and reports Path
+unknown when the daemon omits route data. After a successful probe, the backend
+refreshes the full snapshot and applies the measured path to the matching peer
+so the list, detail drawer, and tray converge on the latest observation.
+
 ## State language
 
 The UI does not reduce state to a boolean. It maintains these independent axes:

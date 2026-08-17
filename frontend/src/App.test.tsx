@@ -184,7 +184,7 @@ describe("HeadscaleClient shell", () => {
     expect(screen.getByRole("heading", { name: "设置", level: 1 })).toBeInTheDocument();
   });
 
-  it("keeps the live path separate from a one-off ping result", async () => {
+  it("updates the recent path from an accurate ping snapshot", async () => {
     const user = userEvent.setup();
     const backend = createBackend();
     const initial = createDemoSnapshot();
@@ -194,10 +194,18 @@ describe("HeadscaleClient shell", () => {
       publishSnapshot = onSnapshot;
       return () => undefined;
     });
-    vi.spyOn(backend, "pingDevice").mockResolvedValue({
-      deviceId: "peer-workstation",
-      latencyMs: 24,
-      via: "direct",
+    vi.spyOn(backend, "pingDevice").mockImplementation(async () => {
+      const directSnapshot = createDemoSnapshot();
+      const workstation = directSnapshot.devices.find((device) => device.id === "peer-workstation")!;
+      workstation.connectionType = "direct";
+      workstation.relayRegion = undefined;
+      publishSnapshot?.(directSnapshot);
+      return {
+        deviceId: "peer-workstation",
+        latencyMs: 24,
+        via: "direct",
+        endpoint: "203.0.113.8:41641",
+      };
     });
 
     render(<App backendClient={backend} />);
@@ -209,19 +217,32 @@ describe("HeadscaleClient shell", () => {
 
     await user.click(screen.getByRole("button", { name: "Ping" }));
 
-    expect(await screen.findByText("本次检测 · 24 ms · 直连")).toBeInTheDocument();
-    expect(within(screen.getByRole("row", { name: /workstation/ })).getByText("中继")).toBeInTheDocument();
-    expect(screen.getByText("DERP · Hong Kong")).toBeInTheDocument();
-
-    const directSnapshot = createDemoSnapshot();
-    const workstation = directSnapshot.devices.find((device) => device.id === "peer-workstation")!;
-    workstation.connectionType = "direct";
-    workstation.relayRegion = undefined;
-    await act(async () => publishSnapshot?.(directSnapshot));
+    expect(await screen.findByText("本次探测 · 24 ms · 直连")).toBeInTheDocument();
     expect(within(screen.getByRole("row", { name: /workstation/ })).getByText("直连")).toBeInTheDocument();
+    expect(screen.queryByText("DERP · Hong Kong")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "概览" }));
     expect(screen.queryByText("中继 · Hong Kong")).not.toBeInTheDocument();
+  });
+
+  it("does not report a direct path when the probe has no route evidence", async () => {
+    const user = userEvent.setup();
+    const backend = createBackend();
+    vi.spyOn(backend, "pingDevice").mockResolvedValue({
+      deviceId: "peer-workstation",
+      latencyMs: 50,
+      via: "unknown",
+    });
+
+    render(<App backendClient={backend} />);
+
+    await screen.findByRole("heading", { name: "服务不可用" });
+    await user.click(screen.getByRole("button", { name: "设备" }));
+    await user.click(screen.getByRole("row", { name: /workstation/ }));
+    await user.click(screen.getByRole("button", { name: "Ping" }));
+
+    expect(await screen.findByText("本次探测 · 50 ms · 路径未知")).toBeInTheDocument();
+    expect(within(screen.getByRole("row", { name: /workstation/ })).getByText("中继")).toBeInTheDocument();
   });
 
   it("keeps the tunnel switch enabled when only the control server is unavailable", async () => {

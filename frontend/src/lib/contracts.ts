@@ -48,7 +48,7 @@ export interface LocalDevice {
   os: string;
   addresses: string[];
   clientVersion: string;
-  connectionType: "direct" | "relay" | "offline";
+  connectionType: "direct" | "relay" | "offline" | "unknown";
   relayRegion?: string;
 }
 
@@ -62,7 +62,7 @@ export interface PeerDevice {
   online: boolean;
   lastSeen: string;
   latencyMs?: number;
-  connectionType: "direct" | "relay" | "offline";
+  connectionType: "direct" | "relay" | "offline" | "unknown";
   relayRegion?: string;
   exitNodeOption: boolean;
   tags: string[];
@@ -150,7 +150,9 @@ export interface EndpointInput {
 export interface PingResult {
   deviceId: string;
   latencyMs: number;
-  via: "direct" | "relay";
+  via: "direct" | "relay" | "unknown";
+  relayRegion?: string;
+  endpoint?: string;
 }
 
 export interface LoginResult {

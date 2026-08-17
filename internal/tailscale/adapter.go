@@ -15,15 +15,29 @@ import (
 )
 
 type Adapter struct {
-	daemon daemonAPI
+	daemon       daemonAPI
+	pingAttempts int
+	pingInterval time.Duration
 }
 
+const (
+	defaultPingAttempts = 3
+	defaultPingInterval = time.Second
+	PingViaDirect       = "direct"
+	PingViaRelay        = "relay"
+	PingViaUnknown      = "unknown"
+)
+
 func NewAdapter() *Adapter {
-	return &Adapter{daemon: newLocalDaemon()}
+	return newAdapterWithDaemon(newLocalDaemon())
 }
 
 func newAdapterWithDaemon(daemon daemonAPI) *Adapter {
-	return &Adapter{daemon: daemon}
+	return &Adapter{
+		daemon:       daemon,
+		pingAttempts: defaultPingAttempts,
+		pingInterval: defaultPingInterval,
+	}
 }
 
 func (a *Adapter) Snapshot(ctx context.Context) (domain.AppSnapshot, error) {
@@ -133,9 +147,11 @@ func (a *Adapter) BeginInteractiveLogin(ctx context.Context, controlURL string) 
 }
 
 type PingResult struct {
-	DeviceID  string `json:"deviceId"`
-	LatencyMS int64  `json:"latencyMs"`
-	Via       string `json:"via"`
+	DeviceID    string `json:"deviceId"`
+	LatencyMS   int64  `json:"latencyMs"`
+	Via         string `json:"via"`
+	RelayRegion string `json:"relayRegion,omitempty"`
+	Endpoint    string `json:"endpoint,omitempty"`
 }
 
 func (a *Adapter) PingDevice(ctx context.Context, deviceID string) (PingResult, error) {
@@ -154,25 +170,76 @@ func (a *Adapter) PingDevice(ctx context.Context, deviceID string) (PingResult, 
 		if len(peer.TailscaleIPs) == 0 {
 			return PingResult{}, domain.NewError(domain.ErrorPreconditionFailed, "The device has no Tailscale address.")
 		}
-		result, err := a.daemon.Ping(ctx, peer.TailscaleIPs[0], tailcfg.PingTSMP)
-		if err != nil {
-			return PingResult{}, classifyError(err)
+		attempts := max(a.pingAttempts, 1)
+		var last PingResult
+		hasResult := false
+		for attempt := 0; attempt < attempts; attempt++ {
+			result, err := a.daemon.Ping(ctx, peer.TailscaleIPs[0], tailcfg.PingDisco)
+			if err != nil {
+				if hasResult && ctx.Err() == nil {
+					return last, nil
+				}
+				return PingResult{}, classifyError(err)
+			}
+			if err := ctx.Err(); err != nil {
+				return PingResult{}, classifyError(err)
+			}
+			if result == nil {
+				if hasResult {
+					return last, nil
+				}
+				return PingResult{}, domain.NewError(domain.ErrorDaemonUnavailable, "The device returned an empty ping response.").WithRetryable(true)
+			}
+			if result.Err != "" {
+				if hasResult {
+					return last, nil
+				}
+				return PingResult{}, domain.NewError(domain.ErrorDaemonUnavailable, "The device did not respond to ping.").
+					WithDetail(result.Err).WithRetryable(true)
+			}
+			last = mapPingResult(deviceID, result)
+			hasResult = true
+			if last.Via == PingViaDirect || attempt == attempts-1 {
+				return last, nil
+			}
+			if err := waitForPingAttempt(ctx, a.pingInterval); err != nil {
+				return PingResult{}, classifyError(err)
+			}
 		}
-		if result.Err != "" {
-			return PingResult{}, domain.NewError(domain.ErrorDaemonUnavailable, "The device did not respond to ping.").
-				WithDetail(result.Err).WithRetryable(true)
-		}
-		via := "direct"
-		if result.DERPRegionID != 0 || result.DERPRegionCode != "" || result.PeerRelay != "" {
-			via = "relay"
-		}
-		return PingResult{
-			DeviceID:  deviceID,
-			LatencyMS: int64(result.LatencySeconds*1000 + 0.5),
-			Via:       via,
-		}, nil
+		return last, nil
 	}
 	return PingResult{}, domain.NewError(domain.ErrorNotFound, fmt.Sprintf("Device %q was not found.", deviceID))
+}
+
+func mapPingResult(deviceID string, result *ipnstate.PingResult) PingResult {
+	ping := PingResult{DeviceID: deviceID, Via: PingViaUnknown}
+	if result == nil {
+		return ping
+	}
+	ping.LatencyMS = int64(result.LatencySeconds*1000 + 0.5)
+	ping.Endpoint = result.Endpoint
+	ping.RelayRegion = result.DERPRegionCode
+	switch {
+	case result.PeerRelay != "", result.DERPRegionID != 0, result.DERPRegionCode != "":
+		ping.Via = PingViaRelay
+	case result.Endpoint != "":
+		ping.Via = PingViaDirect
+	}
+	return ping
+}
+
+func waitForPingAttempt(ctx context.Context, interval time.Duration) error {
+	if interval <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func mapSnapshot(status *ipnstate.Status, prefs *ipn.Prefs) domain.AppSnapshot {
@@ -340,7 +407,7 @@ func mapPeerConnection(peer *ipnstate.PeerStatus) (domain.PeerConnectionType, st
 	if peer.Relay != "" || peer.PeerRelay != "" {
 		return domain.PeerConnectionRelay, peer.Relay
 	}
-	return domain.PeerConnectionOffline, ""
+	return domain.PeerConnectionUnknown, ""
 }
 
 func mapProfile(profile ipn.LoginProfile, active bool) domain.ProfileSummary {

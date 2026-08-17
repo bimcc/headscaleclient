@@ -247,7 +247,8 @@ class DemoBackend implements HeadscaleBackend {
     return {
       deviceId,
       latencyMs: device.latencyMs ?? 42,
-      via: device.connectionType === "direct" ? "direct" : "relay",
+      via: device.connectionType === "direct" ? "direct" : device.connectionType === "relay" ? "relay" : "unknown",
+      relayRegion: device.relayRegion,
     };
   }
 

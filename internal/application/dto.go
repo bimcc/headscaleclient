@@ -15,6 +15,7 @@ const (
 	ConnectionTypeDirect  ConnectionType = "direct"
 	ConnectionTypeRelay   ConnectionType = "relay"
 	ConnectionTypeOffline ConnectionType = "offline"
+	ConnectionTypeUnknown ConnectionType = "unknown"
 )
 
 type EndpointKind string

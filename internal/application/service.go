@@ -372,7 +372,32 @@ func (s *Service) PingDevice(deviceID string) (tailscale.PingResult, error) {
 		s.emitOperationFailed("PingDevice", err)
 		return tailscale.PingResult{}, err
 	}
+	s.refreshAndPublishWith(s.serviceCtx, "PingRefresh", func(snapshot *AppSnapshot) {
+		applyPingResult(snapshot, result)
+	})
 	return result, nil
+}
+
+func applyPingResult(snapshot *AppSnapshot, result tailscale.PingResult) {
+	for i := range snapshot.Devices {
+		device := &snapshot.Devices[i]
+		if device.ID != result.DeviceID {
+			continue
+		}
+		latency := result.LatencyMS
+		device.LatencyMS = &latency
+		switch result.Via {
+		case tailscale.PingViaDirect:
+			device.ConnectionType = ConnectionTypeDirect
+			device.RelayRegion = ""
+		case tailscale.PingViaRelay:
+			device.ConnectionType = ConnectionTypeRelay
+			if result.RelayRegion != "" {
+				device.RelayRegion = result.RelayRegion
+			}
+		}
+		return
+	}
 }
 
 func (s *Service) SaveEndpoint(input EndpointInput) (AppSnapshot, error) {
@@ -757,12 +782,14 @@ func (s *Service) presentSnapshot(
 
 	devices := make([]PeerDevice, 0, len(raw.Peers))
 	for _, peer := range raw.Peers {
-		connectionType := ConnectionTypeOffline
+		connectionType := ConnectionTypeUnknown
 		switch peer.ConnectionType {
 		case domain.PeerConnectionDirect:
 			connectionType = ConnectionTypeDirect
 		case domain.PeerConnectionRelay:
 			connectionType = ConnectionTypeRelay
+		case domain.PeerConnectionOffline:
+			connectionType = ConnectionTypeOffline
 		}
 		devices = append(devices, PeerDevice{
 			ID:             peer.ID,
@@ -911,6 +938,10 @@ func (s *Service) handleDaemonEvent(ctx context.Context, event tailscale.Event) 
 }
 
 func (s *Service) refreshAndPublish(parent context.Context, operation string) {
+	s.refreshAndPublishWith(parent, operation, nil)
+}
+
+func (s *Service) refreshAndPublishWith(parent context.Context, operation string, transform func(*AppSnapshot)) {
 	ctx, cancel := context.WithTimeout(parent, s.queryTimeout)
 	defer cancel()
 	if err := s.acquireMutation(ctx); err != nil {
@@ -924,6 +955,10 @@ func (s *Service) refreshAndPublish(parent context.Context, operation string) {
 	if err != nil {
 		s.emitOperationFailed(operation, normalizeError(err, "The application state could not be refreshed."))
 		return
+	}
+	if transform != nil {
+		transform(&snapshot)
+		snapshot.UpdatedAt = s.now().UTC().Format(time.RFC3339Nano)
 	}
 	s.emitSnapshotChanged(snapshot)
 }

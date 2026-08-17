@@ -66,6 +66,7 @@ const (
 	PeerConnectionDirect  PeerConnectionType = "direct"
 	PeerConnectionRelay   PeerConnectionType = "relay"
 	PeerConnectionOffline PeerConnectionType = "offline"
+	PeerConnectionUnknown PeerConnectionType = "unknown"
 )
 
 type Preferences struct {

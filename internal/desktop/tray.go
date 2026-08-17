@@ -176,6 +176,8 @@ func projectTray(snapshot appservice.AppSnapshot) trayModel {
 			}
 		case appservice.ConnectionTypeOffline:
 			path = localizer.text("离线", "Offline")
+		case appservice.ConnectionTypeUnknown:
+			path = localizer.text("路径未知", "Path unknown")
 		}
 		address := ""
 		if len(device.Addresses) > 0 {

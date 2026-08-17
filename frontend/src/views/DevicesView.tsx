@@ -25,7 +25,14 @@ function primaryAddress(device: PeerDevice) {
 function pathLabel(device: PeerDevice, t: Translate) {
   if (device.connectionType === "direct") return t("device.direct");
   if (device.connectionType === "relay") return device.relayRegion ? `DERP · ${device.relayRegion}` : `DERP · ${t("device.unknownRegion")}`;
-  return t("device.unavailable");
+  if (device.connectionType === "offline") return t("device.offline");
+  return t("device.pathUnknown");
+}
+
+function pingPathLabel(result: PingResult, t: Translate) {
+  if (result.via === "direct") return t("device.direct");
+  if (result.via === "relay") return result.relayRegion ? `DERP · ${result.relayRegion}` : t("device.relay");
+  return t("device.pathUnknown");
 }
 
 export function DevicesView({
@@ -157,7 +164,7 @@ export function DevicesView({
                 </span>
                 <span role="cell">
                   <StatusBadge tone={device.online ? "success" : "neutral"}>
-                    {device.connectionType === "direct" ? t("device.direct") : device.connectionType === "relay" ? t("device.relay") : t("device.offline")}
+                    {device.connectionType === "direct" ? t("device.direct") : device.connectionType === "relay" ? t("device.relay") : device.connectionType === "offline" ? t("device.offline") : t("device.pathUnknown")}
                   </StatusBadge>
                 </span>
                 <span className="muted" role="cell">{device.lastSeen || t("device.neverOnline")}</span>
@@ -221,7 +228,7 @@ export function DevicesView({
               <Send aria-hidden="true" size={17} /> {pinging ? t("device.pinging") : "Ping"}
             </button>
             {pingResult && (
-              <span className="ping-result" role="status">{t("device.pingResult", { latency: pingResult.latencyMs, path: pingResult.via === "direct" ? t("device.direct") : t("device.relay") })}</span>
+              <span className="ping-result" role="status">{t("device.pingResult", { latency: pingResult.latencyMs, path: pingPathLabel(pingResult, t) })}</span>
             )}
           </div>
         </aside>

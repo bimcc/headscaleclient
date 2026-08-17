@@ -56,6 +56,7 @@ export enum ConnectionType {
     ConnectionTypeDirect = "direct",
     ConnectionTypeRelay = "relay",
     ConnectionTypeOffline = "offline",
+    ConnectionTypeUnknown = "unknown",
 };
 
 export interface Diagnostics {

@@ -36,6 +36,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] BE-009 Implement diagnostics and version compatibility reporting. Runtime diagnostics are complete; the supported-version matrix remains.
 - [x] BE-010 Implement confirmed logout for the active daemon profile.
 - [x] BE-011 Add fail-fast endpoint reachability checks before interactive login.
+- [x] BE-012 Replace TSMP route misclassification with bounded Disco probes and
+  publish a refreshed, measured peer path after Ping.
 
 ## LocalAPI adapter tests
 
@@ -47,6 +49,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [ ] TST-006 Add isolated userspace `tailscaled` integration test.
 - [x] TST-007 Test endpoint-specific login selection and active-profile logout.
 - [x] TST-008 Test endpoint health success, unsupported health paths, HTTP 503, and transport failure.
+- [x] TST-009 Test relay-to-direct probing, bounded relay attempts, unknown
+  route evidence, and post-Ping snapshot publication.
 
 ## Frontend shell
 
@@ -81,6 +85,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   Accounts section header.
 - [x] UI-020 Strengthen the exit-node setting hierarchy with a compact nested
   LAN-access row, connector, and explicit disabled styling.
+- [x] UI-021 Rename device route state to recent path, distinguish online
+  unknown routes from offline peers, and synchronize accurate probe results.
 
 ## Desktop integration
 
@@ -155,6 +161,11 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] 2026-08-17 Verified nested network-setting hierarchy, installer-selected
   first-launch language, two NSIS language tables, and checked run-now setup;
   rebuilt the unsigned Windows AMD64 installer and recorded its hash.
+- [x] 2026-08-17 Corrected TSMP's false-direct classification, verified bounded
+  Disco route probing and post-Ping path synchronization, and added unknown-path
+  handling across backend, WebView, and tray.
+- [x] 2026-08-17 Simplified the machine-wide Windows installation directory to
+  `C:\Program Files\BIMCC\HeadscaleClient` without changing publisher metadata.
 - [ ] Complete a separate-profile interactive login against the test Headscale endpoint.
 - [ ] Complete macOS, real-host Linux, signed installer, and clean-machine matrices.
 

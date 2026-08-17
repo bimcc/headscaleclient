@@ -5,4 +5,6 @@ export interface PingResult {
     "deviceId": string;
     "latencyMs": number;
     "via": string;
+    "relayRegion"?: string;
+    "endpoint"?: string;
 }
