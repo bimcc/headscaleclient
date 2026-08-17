@@ -93,8 +93,13 @@ daemon resource usage were not included.
 ## Package
 
 - Artifact: `bin/headscaleclient-amd64-installer.exe`
-- SHA-256: `2F5854B2F446D7AA3F7BAD2F756EB2774208DE0979B1480226175B32AF175FC6`
+- SHA-256: `64DFADC1B13EE26B6A74560479BFBADC0F6803872625BFB54836246EFB248ECC`
 - Default machine installation directory: `C:\Program Files\BIMCC\HeadscaleClient`
+- A registered installation produces a localized update-or-repair confirmation;
+  cancelling exits setup, while continuing preserves product configuration.
+- The installer migrates only a managed service whose executable matches the
+  previous default product directory; official or other external Tailscale
+  services remain untouched.
 - Installer company metadata: `BIMCC., Ltd.`
 - Installer copyright: `(c) 2026 BIMCC., Ltd.`
 - In-app publisher attribution: About view, `BIMCC., Ltd.`

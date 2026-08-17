@@ -69,6 +69,7 @@ ManifestDPIAware true
 !define MUI_LANGDLL_REGISTRY_KEY "${UNINST_KEY}"
 !define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
 !define INSTALL_VENDOR_DIRECTORY "BIMCC"
+!define LEGACY_INSTALL_DIRECTORY "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
 
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
 # !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
@@ -85,10 +86,16 @@ LangString WindowsVersionRequired ${LANG_SIMPCHINESE} "本产品仅支持 Window
 LangString WindowsVersionRequired ${LANG_ENGLISH} "This product is only supported on Windows 10 (Server 2016) and later."
 LangString ArchitectureNotSupported ${LANG_SIMPCHINESE} "当前 Windows 架构不受支持。支持的架构：${ARCH}"
 LangString ArchitectureNotSupported ${LANG_ENGLISH} "This product can't be installed on the current Windows architecture. Supports: ${ARCH}"
+LangString ExistingInstallPrompt ${LANG_SIMPCHINESE} "检测到已安装的 HeadscaleClient。继续将更新或修复现有安装，并保留账号与网络配置。是否继续？"
+LangString ExistingInstallPrompt ${LANG_ENGLISH} "HeadscaleClient is already installed. Continuing will update or repair the installation while preserving account and network configuration. Continue?"
 LangString ServiceInstalling ${LANG_SIMPCHINESE} "正在安装 HeadscaleClient 托管网络服务"
 LangString ServiceInstalling ${LANG_ENGLISH} "Installing the HeadscaleClient managed network service"
+LangString ServiceMigrating ${LANG_SIMPCHINESE} "正在将 HeadscaleClient 托管网络服务迁移到新目录"
+LangString ServiceMigrating ${LANG_ENGLISH} "Migrating the HeadscaleClient managed network service to the new directory"
 LangString ServiceInstallFailed ${LANG_SIMPCHINESE} "无法安装网络服务（退出代码 $1）。"
 LangString ServiceInstallFailed ${LANG_ENGLISH} "The network service could not be installed (exit code $1)."
+LangString ServiceMigrationFailed ${LANG_SIMPCHINESE} "无法迁移旧版网络服务（退出代码 $1）。请先卸载旧版本后重试。"
+LangString ServiceMigrationFailed ${LANG_ENGLISH} "The previous network service could not be migrated (exit code $1). Uninstall the previous version and try again."
 LangString ServiceReusing ${LANG_SIMPCHINESE} "正在复用现有的 Tailscale 网络服务"
 LangString ServiceReusing ${LANG_ENGLISH} "Reusing the existing Tailscale network service"
 LangString ServiceRemoving ${LANG_SIMPCHINESE} "正在移除 HeadscaleClient 托管网络服务"
@@ -115,6 +122,14 @@ ShowInstDetails show # This will always show the installation details.
 Function .onInit
    !insertmacro MUI_LANGDLL_DISPLAY
    !insertmacro wails.checkArchitecture
+   SetRegView 64
+   ReadRegStr $0 HKLM "${UNINST_KEY}" "UninstallString"
+   ${If} $0 != ""
+       IfSilent continueExistingInstall 0
+       MessageBox MB_ICONQUESTION|MB_OKCANCEL "$(ExistingInstallPrompt)" IDOK continueExistingInstall
+       Abort
+       continueExistingInstall:
+   ${EndIf}
 FunctionEnd
 
 Function un.onInit
@@ -141,7 +156,28 @@ Section
     SetOutPath $INSTDIR
 
     ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Services\Tailscale" "ImagePath"
+    StrCpy $2 '"${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe"'
+    StrCpy $3 '${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe'
+    StrCpy $4 "0"
     ${If} $0 == ""
+        StrCpy $4 "1"
+    ${ElseIf} $0 == $2
+    ${OrIf} $0 == $3
+        DetailPrint "$(ServiceMigrating)"
+        nsExec::ExecToLog '"${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe" uninstall-system-daemon'
+        Pop $1
+        ${If} $1 != 0
+            MessageBox MB_ICONSTOP "$(ServiceMigrationFailed)"
+            Abort
+        ${EndIf}
+        IfFileExists "${LEGACY_INSTALL_DIRECTORY}\uninstall.exe" 0 +2
+            ExecWait '"${LEGACY_INSTALL_DIRECTORY}\uninstall.exe" /S'
+        StrCpy $4 "1"
+    ${Else}
+        DetailPrint "$(ServiceReusing)"
+    ${EndIf}
+
+    ${If} $4 == "1"
         DetailPrint "$(ServiceInstalling)"
         nsExec::ExecToLog '"$INSTDIR\daemon\tailscaled.exe" install-system-daemon'
         Pop $1
@@ -151,8 +187,6 @@ Section
         ${EndIf}
         nsExec::ExecToLog '"$SYSDIR\sc.exe" start Tailscale'
         Pop $1
-    ${Else}
-        DetailPrint "$(ServiceReusing)"
     ${EndIf}
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"

@@ -165,7 +165,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   Disco route probing and post-Ping path synchronization, and added unknown-path
   handling across backend, WebView, and tray.
 - [x] 2026-08-17 Simplified the machine-wide Windows installation directory to
-  `C:\Program Files\BIMCC\HeadscaleClient` without changing publisher metadata.
+  `C:\Program Files\BIMCC\HeadscaleClient` without changing publisher metadata,
+  added an existing-install confirmation, and implemented an exact-path
+  migration for the previous managed service directory.
 - [ ] Complete a separate-profile interactive login against the test Headscale endpoint.
 - [ ] Complete macOS, real-host Linux, signed installer, and clean-machine matrices.
 
