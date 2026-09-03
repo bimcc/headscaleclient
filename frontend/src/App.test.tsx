@@ -24,6 +24,26 @@ describe("HeadscaleClient shell", () => {
     expect(screen.queryByText("home-nas")).not.toBeInTheDocument();
   });
 
+  it("refreshes the device inventory from the device view", async () => {
+    const user = userEvent.setup();
+    const backend = createBackend();
+    const initial = createDemoSnapshot();
+    const refreshed = createDemoSnapshot();
+    refreshed.devices[0].name = "bimcc-188";
+    vi.spyOn(backend, "getSnapshot")
+      .mockResolvedValueOnce(initial)
+      .mockResolvedValueOnce(refreshed);
+
+    render(<App backendClient={backend} />);
+
+    await screen.findByRole("heading", { name: "服务不可用" });
+    await user.click(screen.getByRole("button", { name: "设备" }));
+    await user.click(screen.getByRole("button", { name: "刷新设备列表" }));
+
+    expect(await screen.findByText("设备列表已刷新")).toBeInTheDocument();
+    expect(await screen.findByText("bimcc-188")).toBeInTheDocument();
+  });
+
   it("renders a recoverable error state when initial loading fails", async () => {
     const brokenBackend = createBackend();
     vi.spyOn(brokenBackend, "getSnapshot").mockRejectedValueOnce(new Error("LocalAPI denied"));

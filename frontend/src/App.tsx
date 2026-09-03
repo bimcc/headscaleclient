@@ -137,6 +137,8 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
     applySnapshotAction("endpoint", () => backendClient.deleteEndpoint(endpointId), t("network.serverDeleted"));
   const switchProfile = (profileId: string) =>
     applySnapshotAction("profile", () => backendClient.switchProfile(profileId), t("account.switched"));
+  const refreshDevices = () =>
+    applySnapshotAction("devices-refresh", () => backendClient.getSnapshot(), t("device.refreshed")).then(() => undefined);
 
   return (
     <I18nProvider language={language}>
@@ -186,7 +188,9 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
               devices={snapshot.devices}
               networkName={activeEndpoint?.name ?? t("network.noneSelected")}
               accountName={activeProfile?.account ?? t("common.notLoggedIn")}
+              refreshing={busy === "devices-refresh"}
               onCopy={copyText}
+              onRefresh={refreshDevices}
               onPing={async (deviceId) => {
                 try {
                   return await backendClient.pingDevice(deviceId);

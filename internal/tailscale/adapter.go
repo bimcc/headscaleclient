@@ -12,6 +12,7 @@ import (
 	"tailscale.com/ipn"
 	"tailscale.com/ipn/ipnstate"
 	"tailscale.com/tailcfg"
+	"tailscale.com/util/dnsname"
 )
 
 type Adapter struct {
@@ -407,7 +408,12 @@ func mapDevice(status *ipnstate.Status, peer *ipnstate.PeerStatus) domain.Device
 		addresses = append(addresses, address.String())
 	}
 	dnsName := strings.TrimSuffix(peer.DNSName, ".")
-	name := cmp.Or(peer.HostName, dnsName)
+	magicDNSSuffix := status.MagicDNSSuffix
+	if status.CurrentTailnet != nil && status.CurrentTailnet.MagicDNSSuffix != "" {
+		magicDNSSuffix = status.CurrentTailnet.MagicDNSSuffix
+	}
+	name := dnsname.TrimSuffix(peer.DNSName, magicDNSSuffix)
+	name = cmp.Or(name, dnsName, dnsname.SanitizeHostname(peer.HostName))
 	if name == "" && len(addresses) > 0 {
 		name = addresses[0]
 	}

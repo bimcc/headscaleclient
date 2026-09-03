@@ -793,6 +793,16 @@ p {
   color: var(--text);
 }
 
+.icon-button[aria-busy="true"] svg {
+  animation: icon-button-spin 0.9s linear infinite;
+}
+
+@keyframes icon-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .setting-list {
   width: 100%;
 }
@@ -1148,6 +1158,12 @@ select {
 .table-meta span {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.table-meta-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .device-table {

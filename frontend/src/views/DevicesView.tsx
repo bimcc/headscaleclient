@@ -1,4 +1,4 @@
-import { Copy, Globe2, Search, Send, Server, ShieldCheck, Smartphone, UserRound, X } from "lucide-react";
+import { Copy, Globe2, RefreshCw, Search, Send, Server, ShieldCheck, Smartphone, UserRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PeerDevice, PingResult } from "../lib/contracts";
 import { EmptyState, IconButton, StatusBadge } from "../components/ui";
@@ -39,13 +39,17 @@ export function DevicesView({
   devices,
   networkName,
   accountName,
+  refreshing = false,
   onCopy,
+  onRefresh,
   onPing,
 }: {
   devices: PeerDevice[];
   networkName: string;
   accountName: string;
+  refreshing?: boolean;
   onCopy: (value: string, label?: string) => void;
+  onRefresh?: () => Promise<void>;
   onPing: (deviceId: string) => Promise<PingResult>;
 }) {
   const { t } = useI18n();
@@ -133,7 +137,20 @@ export function DevicesView({
 
         <div className="table-meta">
           <h2 id="device-list-title">{t("device.visibleList")}</h2>
-          <span>{filtered.length} / {devices.length}</span>
+          <div className="table-meta-actions">
+            <span>{filtered.length} / {devices.length}</span>
+            {onRefresh && (
+              <IconButton
+                label={refreshing ? t("device.refreshing") : t("device.refresh")}
+                icon={RefreshCw}
+                disabled={refreshing}
+                aria-busy={refreshing}
+                onClick={() => {
+                  void onRefresh().catch(() => undefined);
+                }}
+              />
+            )}
+          </div>
         </div>
 
         {filtered.length === 0 ? (

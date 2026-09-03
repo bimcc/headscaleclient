@@ -99,6 +99,14 @@ reported owner explicitly. Account-facing labels use `sign-in identity` where
 the value is a daemon `LoginName`, because it may be a username or an email
 address.
 
+The Devices view provides a manual refresh action. It requests a new snapshot
+from the local Tailscale LocalAPI, so the inventory, online state, connection
+path, and names converge without changing the active account or network. Peer
+display names prefer the control server's MagicDNS name with the network
+suffix removed; the daemon hostname, virtual address, and stable node ID are
+fallbacks when MagicDNS is unavailable. This keeps names changed in Headplane
+or another control-server UI visible in the client.
+
 When `tailscaled` reports health notices, Overview separates actionable health
 warnings from informational configuration notices. Warnings use the amber
 panel, affect the connection summary, and remain in copied diagnostics. Known

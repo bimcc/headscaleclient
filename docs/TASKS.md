@@ -102,6 +102,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   notices from degrading a healthy connection.
 - [x] UI-027 Distinguish temporary disconnection from destructive local-identity
   removal and explain browser authentication and non-OIDC approval during login.
+- [x] UI-028 Add a manual device-list refresh action and prefer control-server
+  MagicDNS names for peer display labels.
 
 ## Desktop integration
 

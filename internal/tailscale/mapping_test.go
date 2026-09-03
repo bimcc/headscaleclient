@@ -43,6 +43,15 @@ func TestMapSnapshotNormalizesOfficialControlURL(t *testing.T) {
 func TestMapDeviceProvidesStableDisplayNameFallback(t *testing.T) {
 	t.Parallel()
 
+	fromControlServerName := mapDevice(&ipnstate.Status{MagicDNSSuffix: "bimcc.internal"}, &ipnstate.PeerStatus{
+		ID:       tailcfg.StableNodeID("node-renamed"),
+		HostName: "bimcc",
+		DNSName:  "bimcc-188.bimcc.internal.",
+	})
+	if fromControlServerName.Name != "bimcc-188" {
+		t.Fatalf("control-server display name = %q", fromControlServerName.Name)
+	}
+
 	fromAddress := mapDevice(&ipnstate.Status{}, &ipnstate.PeerStatus{
 		ID:           tailcfg.StableNodeID("node-address"),
 		TailscaleIPs: []netip.Addr{netip.MustParseAddr("100.64.0.8")},
