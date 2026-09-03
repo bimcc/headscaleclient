@@ -1,5 +1,5 @@
 import { RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccountMenu } from "./components/AccountMenu";
 import { PrimaryNavigation, viewTitle, type ViewKey } from "./components/Navigation";
 import { ErrorState, LoadingState } from "./components/ui";
@@ -39,6 +39,7 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const previousView = useRef<ViewKey>("overview");
   const language = snapshot?.settings.language ?? "zh-CN";
   const t = useMemo(() => createTranslator(language), [language]);
 
@@ -91,7 +92,7 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
     [snapshot],
   );
 
-  const applySnapshotAction = async (
+  const applySnapshotAction = useCallback(async (
     key: string,
     action: () => Promise<AppSnapshot>,
     successMessage?: string,
@@ -108,7 +109,7 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
     } finally {
       setBusy(null);
     }
-  };
+  }, [t]);
 
   const copyText = async (value: string, label = t("common.copied")) => {
     try {
@@ -118,6 +119,17 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
       setToast(t("common.copyFailed"));
     }
   };
+
+  const refreshDevices = useCallback((notify = true) =>
+    applySnapshotAction("devices-refresh", () => backendClient.getSnapshot(), notify ? t("device.refreshed") : undefined).then(() => undefined),
+  [applySnapshotAction, backendClient, t]);
+
+  useEffect(() => {
+    const enteredDevices = view === "devices" && previousView.current !== "devices";
+    previousView.current = view;
+    if (!enteredDevices || !snapshot) return;
+    void refreshDevices(false).catch(() => undefined);
+  }, [refreshDevices, snapshot, view]);
 
   if (!snapshot && !loadError) return <I18nProvider language={language}><LoadingState /></I18nProvider>;
   if (loadError) return <I18nProvider language={language}><ErrorState message={loadError} onRetry={() => setReloadKey((value) => value + 1)} /></I18nProvider>;
@@ -137,8 +149,6 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
     applySnapshotAction("endpoint", () => backendClient.deleteEndpoint(endpointId), t("network.serverDeleted"));
   const switchProfile = (profileId: string) =>
     applySnapshotAction("profile", () => backendClient.switchProfile(profileId), t("account.switched"));
-  const refreshDevices = () =>
-    applySnapshotAction("devices-refresh", () => backendClient.getSnapshot(), t("device.refreshed")).then(() => undefined);
 
   return (
     <I18nProvider language={language}>

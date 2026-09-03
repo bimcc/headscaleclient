@@ -22,6 +22,14 @@ function primaryAddress(device: PeerDevice) {
   return device.addresses[0] ?? "";
 }
 
+function deviceGroupLabel(device: PeerDevice, t: Translate) {
+  return device.group || t("device.ungrouped");
+}
+
+function deviceTagsLabel(device: PeerDevice, t: Translate) {
+  return device.tags.length > 0 ? device.tags.join(", ") : t("device.noTags");
+}
+
 function pathLabel(device: PeerDevice, t: Translate) {
   if (device.connectionType === "direct") return t("device.direct");
   if (device.connectionType === "relay") return device.relayRegion ? `DERP · ${device.relayRegion}` : `DERP · ${t("device.unknownRegion")}`;
@@ -66,7 +74,7 @@ export function DevicesView({
         filter === "all" || (filter === "online" ? device.online : !device.online);
       const matchesQuery =
         !normalized ||
-        [device.name, device.dnsName, device.owner, device.os, ...device.addresses]
+        [device.name, device.dnsName, device.owner, device.group, device.os, ...device.addresses, ...device.tags]
           .join(" ")
           .toLocaleLowerCase()
           .includes(normalized);
@@ -159,6 +167,7 @@ export function DevicesView({
           <div className="device-table" role="table" aria-label={t("device.table")}>
             <div className="device-table-header" role="row">
               <span role="columnheader">{t("device.table")}</span>
+              <span role="columnheader">{t("device.group")}</span>
               <span role="columnheader">{t("device.virtualAddress")}</span>
               <span role="columnheader">{t("device.currentPath")}</span>
               <span role="columnheader">{t("device.lastOnline")}</span>
@@ -184,6 +193,9 @@ export function DevicesView({
                       <span>{t("device.ownerValue", { owner: device.owner || t("device.unknownOwner") })}</span>
                     </small>
                   </span>
+                </span>
+                <span className="device-group-summary" role="cell" title={deviceGroupLabel(device, t)}>
+                  <span className="truncate">{deviceGroupLabel(device, t)}</span>
                 </span>
                 <span className="device-address-summary" role="cell" title={device.addresses.join("\n")}>
                   <span className="mono truncate">{primaryAddress(device) || t("common.unassigned")}</span>
@@ -242,13 +254,15 @@ export function DevicesView({
               <dt>{t("device.owner")}</dt>
               <dd>{selected.owner || t("device.unknownOwner")}</dd>
             </div>
-          </dl>
-
-          {selected.tags.length > 0 && (
-            <div className="tag-list" aria-label={t("device.tags")}>
-              {selected.tags.map((tag) => <span key={tag}>{tag}</span>)}
+            <div>
+              <dt>{t("device.group")}</dt>
+              <dd><span className="truncate" title={deviceGroupLabel(selected, t)}>{deviceGroupLabel(selected, t)}</span></dd>
             </div>
-          )}
+            <div>
+              <dt>{t("device.tags")}</dt>
+              <dd><span className="truncate" title={deviceTagsLabel(selected, t)}>{deviceTagsLabel(selected, t)}</span></dd>
+            </div>
+          </dl>
 
           <div className="drawer-actions">
             <button className="button primary with-icon" type="button" disabled={!selected.online || pinging} onClick={pingSelected}>

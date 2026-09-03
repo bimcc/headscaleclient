@@ -104,6 +104,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   removal and explain browser authentication and non-OIDC approval during login.
 - [x] UI-028 Add a manual device-list refresh action and prefer control-server
   MagicDNS names for peer display labels.
+- [x] UI-029 Show the control-plane device group separately from ACL tags and
+  silently refresh the device inventory on entry to the Devices view.
 
 ## Desktop integration
 
@@ -130,6 +132,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   upstream Tailscale dependency set instead of suggesting a process conflict.
 - [x] DESK-013 Detect a running HeadscaleClient before replacing application
   files and provide a localized retry-or-cancel prompt with tray-exit guidance.
+- [x] DESK-014 Group native-tray online devices by the control-plane group and
+  keep ungrouped peers in an explicit localized bucket.
 
 ## Resource efficiency
 

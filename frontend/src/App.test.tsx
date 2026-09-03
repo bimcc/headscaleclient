@@ -18,10 +18,15 @@ describe("HeadscaleClient shell", () => {
     expect(screen.getByText("控制服务器下发的可见节点")).toBeInTheDocument();
     expect(screen.getByText(/显示不代表拥有或已获准访问/)).toBeInTheDocument();
     expect(screen.getAllByText("所有者 · lin@example.com").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("home").length).toBeGreaterThan(0);
 
     await user.type(screen.getByRole("searchbox", { name: "搜索设备" }), "pixel");
     expect(screen.getByText("pixel-9")).toBeInTheDocument();
     expect(screen.queryByText("home-nas")).not.toBeInTheDocument();
+
+    await user.clear(screen.getByRole("searchbox", { name: "搜索设备" }));
+    await user.click(screen.getByRole("row", { name: /home-nas/ }));
+    expect(screen.getByText("tag:server")).toBeInTheDocument();
   });
 
   it("refreshes the device inventory from the device view", async () => {
@@ -31,8 +36,8 @@ describe("HeadscaleClient shell", () => {
     const refreshed = createDemoSnapshot();
     refreshed.devices[0].name = "bimcc-188";
     vi.spyOn(backend, "getSnapshot")
-      .mockResolvedValueOnce(initial)
-      .mockResolvedValueOnce(refreshed);
+      .mockResolvedValue(refreshed)
+      .mockResolvedValueOnce(initial);
 
     render(<App backendClient={backend} />);
 
@@ -42,6 +47,24 @@ describe("HeadscaleClient shell", () => {
 
     expect(await screen.findByText("设备列表已刷新")).toBeInTheDocument();
     expect(await screen.findByText("bimcc-188")).toBeInTheDocument();
+  });
+
+  it("refreshes automatically when entering the device view", async () => {
+    const user = userEvent.setup();
+    const backend = createBackend();
+    const initial = createDemoSnapshot();
+    const refreshed = createDemoSnapshot();
+    refreshed.devices[0].name = "bimcc-188";
+    const getSnapshot = vi.spyOn(backend, "getSnapshot")
+      .mockResolvedValue(refreshed)
+      .mockResolvedValueOnce(initial);
+
+    render(<App backendClient={backend} />);
+    await screen.findByRole("heading", { name: "服务不可用" });
+    await user.click(screen.getByRole("button", { name: "设备" }));
+
+    expect(await screen.findByText("bimcc-188")).toBeInTheDocument();
+    expect(getSnapshot).toHaveBeenCalledTimes(2);
   });
 
   it("renders a recoverable error state when initial loading fails", async () => {

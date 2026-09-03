@@ -67,6 +67,12 @@ fetches a full snapshot when it detects a gap.
 Desktop presentation also uses `app:navigate` with a typed view target. It is
 a local window-navigation request, not a sequenced product-state event.
 
+The native tray projects the same peer snapshot as the WebView. Online peers
+are placed in submenus keyed by `DeviceIdentity.Group`, with an explicit
+localized ungrouped bucket for missing values. Tray selection only navigates to
+the Devices view; it does not implement a separate peer or authorization
+model.
+
 ## Peer route probing
 
 Peer route status is a best-effort snapshot. `PeerStatus.CurAddr` is mapped to
@@ -158,7 +164,7 @@ and server-supplied diagnostic details are data and are never translated.
 - current structured daemon health notices
 - active control server and profile
 - local device identity and addresses
-- peer summaries
+- peer summaries, including the control-plane group and ACL tags
 - user-editable preferences
 - discovered capabilities
 - last refresh time and optional structured problem
@@ -178,6 +184,11 @@ The peer collection comes only from the active LocalAPI status map. It can
 contain nodes owned by other server users when the control server publishes
 them. The client labels this as visibility, not ownership or authorization;
 Headscale/Tailscale policy and destination filtering remain authoritative.
+For each peer, `DeviceIdentity.Group` is mapped from the matching
+`ipnstate.Status.User[UserID].LoginName`. On Headscale this is normally the
+user/namespace shown in native client menus; on compatible control planes it is
+the equivalent login identity. `DeviceIdentity.Tags` is mapped independently
+from `PeerStatus.Tags` and represents ACL policy labels.
 Likewise, `ProfileSummary.LoginName` is an opaque login identity to the client.
 Headscale `v0.29.3` currently resolves its username as `Email`, `Name`, OIDC
 provider identifier, then numeric user ID; the client does not reimplement or

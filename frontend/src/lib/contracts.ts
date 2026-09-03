@@ -63,6 +63,7 @@ export interface PeerDevice {
   name: string;
   dnsName: string;
   owner: string;
+  group: string;
   os: string;
   addresses: string[];
   online: boolean;

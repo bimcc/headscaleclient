@@ -92,6 +92,12 @@ The Overview does not duplicate peer rows. The Devices view is the single
 detailed inventory for the active daemon profile; switching the active account
 or control server can replace that entire list.
 
+The native tray uses the same snapshot as the detailed window. Online peers are
+grouped by their control-plane group, with an `Ungrouped` bucket when one is not
+reported; selecting a peer opens the Devices view. This mirrors the grouping
+shown by the official Tailscale client without changing access policy or
+creating a second device inventory.
+
 The Devices heading calls these `Devices visible on this network`. A quiet
 scope notice states that peers are published by the control server and that
 visibility is not ownership or access authorization. Every row labels its
@@ -99,7 +105,16 @@ reported owner explicitly. Account-facing labels use `sign-in identity` where
 the value is a daemon `LoginName`, because it may be a username or an email
 address.
 
-The Devices view provides a manual refresh action. It requests a new snapshot
+Each device also shows its control-plane group. This value is taken from the
+peer's `UserProfile.LoginName`, which is the namespace on Headscale (for
+example, `home`) and the account identity on compatible Tailscale control
+planes. It is intentionally separate from the reported owner display name and
+from ACL tags. The detail drawer shows ACL tags independently; tags such as
+`tag:server` are policy labels, not a replacement for the device group. If the
+control plane reports neither value, the UI uses `Ungrouped` and `No ACL tags`.
+
+The Devices view provides a manual refresh action and performs one silent full
+refresh whenever the user enters the view. It requests a new snapshot
 from the local Tailscale LocalAPI, so the inventory, online state, connection
 path, and names converge without changing the active account or network. Peer
 display names prefer the control server's MagicDNS name with the network

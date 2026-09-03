@@ -23,6 +23,7 @@ type trayProfile struct {
 type trayDevice struct {
 	ID             string
 	Label          string
+	Group          string
 	ExitNodeOption bool
 }
 
@@ -186,6 +187,7 @@ func projectTray(snapshot appservice.AppSnapshot) trayModel {
 		trayDevice := trayDevice{
 			ID:             device.ID,
 			Label:          fmt.Sprintf("%s%s · %s", device.Name, address, path),
+			Group:          strings.TrimSpace(device.Group),
 			ExitNodeOption: device.ExitNodeOption,
 		}
 		if device.Online {
@@ -352,8 +354,18 @@ func (c *TrayController) renderLocked() {
 		if limit > maxTrayDevices {
 			limit = maxTrayDevices
 		}
+		groupMenus := make(map[string]*wails.Menu)
 		for _, device := range model.Devices[:limit] {
-			devices.Add(device.Label).OnClick(func(*wails.Context) {
+			group := device.Group
+			if group == "" {
+				group = localizer.text("未分组", "Ungrouped")
+			}
+			groupMenu, ok := groupMenus[group]
+			if !ok {
+				groupMenu = devices.AddSubmenu(group)
+				groupMenus[group] = groupMenu
+			}
+			groupMenu.Add(device.Label).OnClick(func(*wails.Context) {
 				c.openView(NavigateDevices)
 			})
 		}

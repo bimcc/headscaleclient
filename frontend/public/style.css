@@ -1173,7 +1173,7 @@ select {
 .device-table-header,
 .device-table-row {
   display: grid;
-  grid-template-columns: minmax(170px, 1.4fr) minmax(120px, 1fr) 88px 110px 18px;
+  grid-template-columns: minmax(170px, 1.35fr) minmax(118px, 0.9fr) minmax(120px, 1fr) 88px 110px 18px;
   align-items: center;
   gap: 12px;
   min-width: 0;
@@ -1219,6 +1219,12 @@ select {
 .device-cell-main small {
   color: var(--text-muted);
   font-size: 11.5px;
+}
+
+.device-group-summary {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .device-owner {
@@ -2055,11 +2061,11 @@ select {
 
   .device-table-header,
   .device-table-row {
-    grid-template-columns: minmax(170px, 1.4fr) minmax(116px, 1fr) 84px 18px;
+    grid-template-columns: minmax(170px, 1.35fr) minmax(112px, 0.9fr) minmax(116px, 1fr) 84px 18px;
   }
 
-  .device-table-header > :nth-child(4),
-  .device-table-row > :nth-child(4) {
+  .device-table-header > :nth-child(5),
+  .device-table-row > :nth-child(5) {
     display: none;
   }
 
@@ -2381,11 +2387,12 @@ select {
   }
 
   .device-table-row > :nth-child(2),
-  .device-table-row > :nth-child(4) {
+  .device-table-row > :nth-child(3),
+  .device-table-row > :nth-child(5) {
     display: none;
   }
 
-  .device-table-row > :nth-child(3) {
+  .device-table-row > :nth-child(4) {
     justify-self: end;
   }
 

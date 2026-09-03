@@ -407,6 +407,10 @@ func mapDevice(status *ipnstate.Status, peer *ipnstate.PeerStatus) domain.Device
 	for _, address := range peer.TailscaleIPs {
 		addresses = append(addresses, address.String())
 	}
+	tags := []string{}
+	if peer.Tags != nil && !peer.Tags.IsNil() {
+		tags = peer.Tags.AsSlice()
+	}
 	dnsName := strings.TrimSuffix(peer.DNSName, ".")
 	magicDNSSuffix := status.MagicDNSSuffix
 	if status.CurrentTailnet != nil && status.CurrentTailnet.MagicDNSSuffix != "" {
@@ -421,16 +425,23 @@ func mapDevice(status *ipnstate.Status, peer *ipnstate.PeerStatus) domain.Device
 		name = string(peer.ID)
 	}
 	user := ""
+	group := ""
 	if profile, ok := status.User[peer.UserID]; ok {
 		user = cmp.Or(profile.DisplayName, profile.LoginName)
+		// Headscale exposes its namespace and Tailscale exposes its account
+		// identity as UserProfile.LoginName. Keep it separate from the
+		// display-friendly owner name so the UI can show the actual grouping.
+		group = profile.LoginName
 	}
 	return domain.DeviceIdentity{
 		ID:        string(peer.ID),
 		Name:      name,
 		DNSName:   dnsName,
 		User:      user,
+		Group:     group,
 		OS:        peer.OS,
 		Addresses: addresses,
+		Tags:      tags,
 	}
 }
 

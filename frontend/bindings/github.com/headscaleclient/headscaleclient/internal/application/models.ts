@@ -167,6 +167,7 @@ export interface PeerDevice {
     "name": string;
     "dnsName": string;
     "owner": string;
+    "group": string;
     "os": string;
     "addresses": string[] | null;
     "online": boolean;

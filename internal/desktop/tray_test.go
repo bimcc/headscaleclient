@@ -31,7 +31,7 @@ func TestProjectTrayBuildsQuickStateFromSnapshot(t *testing.T) {
 		Devices: []appservice.PeerDevice{
 			{
 				ID: "direct", Name: "laptop", Addresses: []string{"100.64.0.2"},
-				Online: true, ConnectionType: appservice.ConnectionTypeDirect,
+				Online: true, Group: "home", ConnectionType: appservice.ConnectionTypeDirect,
 			},
 			{
 				ID: "relay-exit", Name: "relay", Online: true,
@@ -64,6 +64,9 @@ func TestProjectTrayBuildsQuickStateFromSnapshot(t *testing.T) {
 	}
 	if !strings.Contains(model.Devices[0].Label, "直连") || !strings.Contains(model.Devices[1].Label, "中继 Hong Kong") {
 		t.Fatalf("unexpected path labels: %+v", model.Devices)
+	}
+	if model.Devices[0].Group != "home" {
+		t.Fatalf("device group = %q, want home", model.Devices[0].Group)
 	}
 	if len(model.ExitNodes) != 2 || model.ExitNodes[0].ID != "relay-exit" || model.ExitNodes[1].ID != "offline-exit" {
 		t.Fatalf("eligible exit nodes were not preserved: %+v", model.ExitNodes)

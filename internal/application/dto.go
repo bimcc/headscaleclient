@@ -83,6 +83,7 @@ type PeerDevice struct {
 	Name           string         `json:"name"`
 	DNSName        string         `json:"dnsName"`
 	Owner          string         `json:"owner"`
+	Group          string         `json:"group"`
 	OS             string         `json:"os"`
 	Addresses      []string       `json:"addresses"`
 	Online         bool           `json:"online"`

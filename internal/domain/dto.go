@@ -46,8 +46,10 @@ type DeviceIdentity struct {
 	Name      string   `json:"name"`
 	DNSName   string   `json:"dnsName,omitempty"`
 	User      string   `json:"user,omitempty"`
+	Group     string   `json:"group,omitempty"`
 	OS        string   `json:"os,omitempty"`
 	Addresses []string `json:"addresses"`
+	Tags      []string `json:"tags"`
 }
 
 type PeerSummary struct {

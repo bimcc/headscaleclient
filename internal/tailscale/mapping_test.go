@@ -8,6 +8,7 @@ import (
 	"tailscale.com/ipn"
 	"tailscale.com/ipn/ipnstate"
 	"tailscale.com/tailcfg"
+	"tailscale.com/types/views"
 )
 
 func TestMapSnapshotNormalizesOfficialControlURL(t *testing.T) {
@@ -63,6 +64,30 @@ func TestMapDeviceProvidesStableDisplayNameFallback(t *testing.T) {
 	fromID := mapDevice(&ipnstate.Status{}, &ipnstate.PeerStatus{ID: tailcfg.StableNodeID("node-id")})
 	if fromID.Name != "node-id" {
 		t.Fatalf("ID fallback name = %q", fromID.Name)
+	}
+}
+
+func TestMapDeviceProvidesGroupAndACLTags(t *testing.T) {
+	t.Parallel()
+
+	status := &ipnstate.Status{
+		MagicDNSSuffix: "mesh.example",
+		User: map[tailcfg.UserID]tailcfg.UserProfile{
+			42: {LoginName: "home", DisplayName: "Liao Xiaofeng"},
+		},
+	}
+	peer := &ipnstate.PeerStatus{
+		ID:     tailcfg.StableNodeID("node-1"),
+		UserID: 42,
+		Tags:   new(views.SliceOf([]string{"tag:server", "tag:dev"})),
+	}
+
+	device := mapDevice(status, peer)
+	if device.User != "Liao Xiaofeng" || device.Group != "home" {
+		t.Fatalf("owner/group = (%q, %q), want (%q, %q)", device.User, device.Group, "Liao Xiaofeng", "home")
+	}
+	if got := device.Tags; len(got) != 2 || got[0] != "tag:server" || got[1] != "tag:dev" {
+		t.Fatalf("tags = %#v", got)
 	}
 }
 

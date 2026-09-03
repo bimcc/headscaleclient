@@ -865,6 +865,7 @@ func (s *Service) presentSnapshot(
 			Name:           peer.Name,
 			DNSName:        peer.DNSName,
 			Owner:          peer.User,
+			Group:          peer.Group,
 			OS:             peer.OS,
 			Addresses:      nonNilStrings(peer.Addresses),
 			Online:         peer.Online,
@@ -872,7 +873,7 @@ func (s *Service) presentSnapshot(
 			ConnectionType: connectionType,
 			RelayRegion:    peer.RelayRegion,
 			ExitNodeOption: peer.ExitNodeOption,
-			Tags:           []string{},
+			Tags:           nonNilStrings(peer.Tags),
 		})
 	}
 
