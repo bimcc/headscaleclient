@@ -50,9 +50,11 @@ export interface HealthNotice {
 export interface LocalDevice {
   id: string;
   name: string;
+  hostName: string;
   dnsName: string;
   os: string;
   addresses: string[];
+  lanAddresses: string[];
   clientVersion: string;
   connectionType: "direct" | "relay" | "offline" | "unknown";
   relayRegion?: string;
@@ -61,11 +63,13 @@ export interface LocalDevice {
 export interface PeerDevice {
   id: string;
   name: string;
+  hostName: string;
   dnsName: string;
   owner: string;
   group: string;
   os: string;
   addresses: string[];
+  lanAddresses: string[];
   online: boolean;
   lastSeen: string;
   latencyMs?: number;

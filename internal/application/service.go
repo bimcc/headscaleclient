@@ -840,9 +840,11 @@ func (s *Service) presentSnapshot(
 	if raw.LocalDevice != nil {
 		localDevice.ID = raw.LocalDevice.ID
 		localDevice.Name = raw.LocalDevice.Name
+		localDevice.HostName = raw.LocalDevice.HostName
 		localDevice.DNSName = raw.LocalDevice.DNSName
 		localDevice.OS = raw.LocalDevice.OS
 		localDevice.Addresses = nonNilStrings(raw.LocalDevice.Addresses)
+		localDevice.LANAddresses = nonNilStrings(raw.LocalDevice.LANAddresses)
 		localDevice.ClientVersion = raw.DaemonVersion
 		if state.Connection == domain.ConnectionRunning || state.Connection == domain.ConnectionDegraded {
 			localDevice.ConnectionType = ConnectionTypeDirect
@@ -863,11 +865,13 @@ func (s *Service) presentSnapshot(
 		devices = append(devices, PeerDevice{
 			ID:             peer.ID,
 			Name:           peer.Name,
+			HostName:       peer.HostName,
 			DNSName:        peer.DNSName,
 			Owner:          peer.User,
 			Group:          peer.Group,
 			OS:             peer.OS,
 			Addresses:      nonNilStrings(peer.Addresses),
+			LANAddresses:   nonNilStrings(peer.LANAddresses),
 			Online:         peer.Online,
 			LastSeen:       peer.LastSeen,
 			ConnectionType: connectionType,

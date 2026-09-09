@@ -238,6 +238,10 @@ export function DevicesView({
               <dt>MagicDNS</dt>
               <dd><span className="truncate" title={selected.dnsName}>{selected.dnsName || t("common.unassigned")}</span><IconButton label={t("device.copyMagicDNS")} icon={Copy} disabled={!selected.dnsName} onClick={() => onCopy(selected.dnsName)} /></dd>
             </div>
+            <div>
+              <dt>{t("device.hostName")}</dt>
+              <dd><span className="truncate" title={selected.hostName}>{selected.hostName || t("common.notProvided")}</span><IconButton label={t("device.copyHostName")} icon={Copy} disabled={!selected.hostName} onClick={() => onCopy(selected.hostName)} /></dd>
+            </div>
             {selected.addresses.length > 0 ? selected.addresses.map((address) => (
               <div key={address}>
                 <dt>{address.includes(":") ? t("device.ipv6Address") : t("device.ipv4Address")}</dt>
@@ -246,6 +250,14 @@ export function DevicesView({
             )) : (
               <div><dt>{t("device.virtualAddress")}</dt><dd>{t("common.unassigned")}</dd></div>
             )}
+            <div>
+              <dt>{t("device.lanAddress")}</dt>
+              <dd>
+                {selected.lanAddresses.length > 0 ? (
+                  <span className="detail-value-list">{selected.lanAddresses.map((address) => <span className="mono truncate" title={address} key={address}>{address}</span>)}</span>
+                ) : t("common.notProvided")}
+              </dd>
+            </div>
             <div>
               <dt>{t("device.currentPath")}</dt>
               <dd>{pathLabel(selected, t)}</dd>

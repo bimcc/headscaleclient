@@ -70,9 +70,11 @@ type RuntimeState struct {
 type LocalDevice struct {
 	ID             string         `json:"id"`
 	Name           string         `json:"name"`
+	HostName       string         `json:"hostName"`
 	DNSName        string         `json:"dnsName"`
 	OS             string         `json:"os"`
 	Addresses      []string       `json:"addresses"`
+	LANAddresses   []string       `json:"lanAddresses"`
 	ClientVersion  string         `json:"clientVersion"`
 	ConnectionType ConnectionType `json:"connectionType"`
 	RelayRegion    string         `json:"relayRegion,omitempty"`
@@ -81,11 +83,13 @@ type LocalDevice struct {
 type PeerDevice struct {
 	ID             string         `json:"id"`
 	Name           string         `json:"name"`
+	HostName       string         `json:"hostName"`
 	DNSName        string         `json:"dnsName"`
 	Owner          string         `json:"owner"`
 	Group          string         `json:"group"`
 	OS             string         `json:"os"`
 	Addresses      []string       `json:"addresses"`
+	LANAddresses   []string       `json:"lanAddresses"`
 	Online         bool           `json:"online"`
 	LastSeen       string         `json:"lastSeen"`
 	LatencyMS      *int64         `json:"latencyMs,omitempty"`

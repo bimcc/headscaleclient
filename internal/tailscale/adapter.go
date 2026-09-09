@@ -4,6 +4,8 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"net"
+	"net/netip"
 	"slices"
 	"strings"
 	"time"
@@ -288,6 +290,7 @@ func mapSnapshot(status *ipnstate.Status, prefs *ipn.Prefs) domain.AppSnapshot {
 	}
 	if status != nil && status.Self != nil {
 		device := mapDevice(status, status.Self)
+		device.LANAddresses = localLANAddresses()
 		snapshot.LocalDevice = &device
 	}
 	if status == nil {
@@ -434,15 +437,76 @@ func mapDevice(status *ipnstate.Status, peer *ipnstate.PeerStatus) domain.Device
 		group = profile.LoginName
 	}
 	return domain.DeviceIdentity{
-		ID:        string(peer.ID),
-		Name:      name,
-		DNSName:   dnsName,
-		User:      user,
-		Group:     group,
-		OS:        peer.OS,
-		Addresses: addresses,
-		Tags:      tags,
+		ID:           string(peer.ID),
+		Name:         name,
+		HostName:     strings.TrimSpace(peer.HostName),
+		DNSName:      dnsName,
+		User:         user,
+		Group:        group,
+		OS:           peer.OS,
+		Addresses:    addresses,
+		LANAddresses: privateEndpointAddresses(peer.Addrs),
+		Tags:         tags,
 	}
+}
+
+func privateEndpointAddresses(endpoints []string) []string {
+	addresses := make([]string, 0)
+	seen := make(map[string]struct{})
+	for _, endpoint := range endpoints {
+		host, _, err := net.SplitHostPort(endpoint)
+		if err != nil {
+			continue
+		}
+		address, err := netip.ParseAddr(host)
+		if err != nil || !address.IsPrivate() || address.IsLoopback() || address.IsLinkLocalUnicast() || address.IsUnspecified() {
+			continue
+		}
+		value := address.String()
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		addresses = append(addresses, value)
+	}
+	slices.Sort(addresses)
+	return addresses
+}
+
+func localLANAddresses() []string {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return []string{}
+	}
+	addresses := make([]string, 0)
+	seen := make(map[string]struct{})
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		ifaceAddresses, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, raw := range ifaceAddresses {
+			prefix, err := netip.ParsePrefix(raw.String())
+			if err != nil {
+				continue
+			}
+			address := prefix.Addr()
+			if !address.IsPrivate() || address.IsLoopback() || address.IsLinkLocalUnicast() || address.IsUnspecified() {
+				continue
+			}
+			value := address.String()
+			if _, ok := seen[value]; ok {
+				continue
+			}
+			seen[value] = struct{}{}
+			addresses = append(addresses, value)
+		}
+	}
+	slices.Sort(addresses)
+	return addresses
 }
 
 func mapPeerConnection(peer *ipnstate.PeerStatus) (domain.PeerConnectionType, string) {

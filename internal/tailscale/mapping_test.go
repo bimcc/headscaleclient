@@ -2,6 +2,7 @@ package tailscale
 
 import (
 	"net/netip"
+	"slices"
 	"testing"
 
 	"github.com/headscaleclient/headscaleclient/internal/domain"
@@ -52,6 +53,9 @@ func TestMapDeviceProvidesStableDisplayNameFallback(t *testing.T) {
 	if fromControlServerName.Name != "bimcc-188" {
 		t.Fatalf("control-server display name = %q", fromControlServerName.Name)
 	}
+	if fromControlServerName.HostName != "bimcc" {
+		t.Fatalf("system hostname = %q, want bimcc", fromControlServerName.HostName)
+	}
 
 	fromAddress := mapDevice(&ipnstate.Status{}, &ipnstate.PeerStatus{
 		ID:           tailcfg.StableNodeID("node-address"),
@@ -88,6 +92,18 @@ func TestMapDeviceProvidesGroupAndACLTags(t *testing.T) {
 	}
 	if got := device.Tags; len(got) != 2 || got[0] != "tag:server" || got[1] != "tag:dev" {
 		t.Fatalf("tags = %#v", got)
+	}
+}
+
+func TestMapDeviceExtractsPrivateEndpointAddresses(t *testing.T) {
+	t.Parallel()
+
+	device := mapDevice(&ipnstate.Status{}, &ipnstate.PeerStatus{
+		ID:    tailcfg.StableNodeID("node-lan"),
+		Addrs: []string{"203.0.113.5:41641", "192.168.2.188:41641", "192.168.2.188:41642", "[fd7a:115c:a1e0::9]:41641"},
+	})
+	if got, want := device.LANAddresses, []string{"192.168.2.188", "fd7a:115c:a1e0::9"}; !slices.Equal(got, want) {
+		t.Fatalf("private endpoint addresses = %#v, want %#v", got, want)
 	}
 }
 

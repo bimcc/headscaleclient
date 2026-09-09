@@ -120,9 +120,11 @@ export interface EngineStatus {
 export interface LocalDevice {
     "id": string;
     "name": string;
+    "hostName": string;
     "dnsName": string;
     "os": string;
     "addresses": string[] | null;
+    "lanAddresses": string[] | null;
     "clientVersion": string;
     "connectionType": ConnectionType;
     "relayRegion"?: string;
@@ -165,11 +167,13 @@ export interface OperationFailedEvent {
 export interface PeerDevice {
     "id": string;
     "name": string;
+    "hostName": string;
     "dnsName": string;
     "owner": string;
     "group": string;
     "os": string;
     "addresses": string[] | null;
+    "lanAddresses": string[] | null;
     "online": boolean;
     "lastSeen": string;
     "latencyMs"?: number | null;

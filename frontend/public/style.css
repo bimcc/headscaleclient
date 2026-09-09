@@ -1289,6 +1289,12 @@ select {
   align-items: center;
 }
 
+.detail-value-list {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
 .drawer-header {
   justify-content: space-between;
   gap: 12px;

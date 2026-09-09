@@ -222,6 +222,13 @@ export function OverviewView({
             </dd>
           </div>
           <div>
+            <dt>{t("overview.hostName")}</dt>
+            <dd>
+              <span className="truncate" title={snapshot.localDevice.hostName}>{snapshot.localDevice.hostName || t("common.notProvided")}</span>
+              <IconButton label={t("overview.copyHostName")} icon={Copy} disabled={!snapshot.localDevice.hostName} onClick={() => onCopy(snapshot.localDevice.hostName)} />
+            </dd>
+          </div>
+          <div>
             <dt>MagicDNS</dt>
             <dd>
               <span className="truncate" title={snapshot.localDevice.dnsName}>{snapshot.localDevice.dnsName}</span>
@@ -234,6 +241,15 @@ export function OverviewView({
               <dd>
                 <span className="mono truncate" title={address}>{address}</span>
                 <IconButton label={t("overview.copyAddress", { type: index === 0 ? "IPv4" : "IPv6" })} icon={Copy} onClick={() => onCopy(address)} />
+              </dd>
+            </div>
+          ))}
+          {snapshot.localDevice.lanAddresses.map((address) => (
+            <div key={`lan-${address}`}>
+              <dt>{t("overview.lanAddress")}</dt>
+              <dd>
+                <span className="mono truncate" title={address}>{address}</span>
+                <IconButton label={t("overview.copyLANAddress")} icon={Copy} onClick={() => onCopy(address)} />
               </dd>
             </div>
           ))}

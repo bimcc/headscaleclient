@@ -42,14 +42,16 @@ type ProfileSummary struct {
 }
 
 type DeviceIdentity struct {
-	ID        string   `json:"id"`
-	Name      string   `json:"name"`
-	DNSName   string   `json:"dnsName,omitempty"`
-	User      string   `json:"user,omitempty"`
-	Group     string   `json:"group,omitempty"`
-	OS        string   `json:"os,omitempty"`
-	Addresses []string `json:"addresses"`
-	Tags      []string `json:"tags"`
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	HostName     string   `json:"hostName,omitempty"`
+	DNSName      string   `json:"dnsName,omitempty"`
+	User         string   `json:"user,omitempty"`
+	Group        string   `json:"group,omitempty"`
+	OS           string   `json:"os,omitempty"`
+	Addresses    []string `json:"addresses"`
+	LANAddresses []string `json:"lanAddresses,omitempty"`
+	Tags         []string `json:"tags"`
 }
 
 type PeerSummary struct {
