@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">HeadscaleClient Preview</string>
+    <string name="vpn_channel">VPN connection</string>
+    <string name="vpn_starting">Establishing secure connection…</string>
+    <string name="vpn_connected">VPN connected. Tap to open client.</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="vpn_permission_denied">VPN permission was not granted. Connect again and allow the system request.</string>
+    <string name="vpn_start_failed">VPN could not start. Open the client and retry.</string>
+    <string name="browser_failed">Could not open a browser. Check that a browser is installed.</string>
+    <string name="startup_failed">The network core could not start. Reopen the client.</string>
+</resources>

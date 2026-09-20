@@ -14,6 +14,12 @@ type localDaemon struct {
 	client *local.Client
 }
 
+// NewAdapterWithLocalClient attaches the shared adapter to an embedded runtime.
+// Android supplies an in-process transport; desktop keeps its usual LocalAPI.
+func NewAdapterWithLocalClient(client *local.Client) *Adapter {
+	return newAdapterWithDaemon(&localDaemon{client: client})
+}
+
 func newLocalDaemon() *localDaemon {
 	return &localDaemon{client: newLocalClient()}
 }

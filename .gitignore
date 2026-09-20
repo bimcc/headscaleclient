@@ -12,3 +12,8 @@ build/ios/xcode/overlay.json
 build/ios/xcode/gen/
 build/android/overlay.json
 build/android/gen/
+mobile/android/.gradle/
+mobile/android/**/build/
+mobile/android/app/libs/
+mobile/android/app/src/main/assets/
+mobile/android/local.properties

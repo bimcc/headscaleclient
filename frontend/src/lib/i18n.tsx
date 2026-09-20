@@ -2,6 +2,9 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { LanguagePreference } from "./contracts";
 
 const zhCN = {
+  "settings.androidTitle": "手机连接",
+  "settings.androidHint": "关闭界面后 VPN 仍可运行。Clash Meta 的代理模式可以同时使用；VPN／TUN 模式会替换当前 VPN。",
+  "settings.androidBattery": "荣耀手机若锁屏后断线，请在系统的应用启动管理中允许后台活动。具体入口随 MagicOS 版本有所不同。",
   "nav.overview": "概览",
   "nav.devices": "设备",
   "nav.networks": "网络与账号",
@@ -268,6 +271,9 @@ const zhCN = {
 export type MessageKey = keyof typeof zhCN;
 
 const enUS: Record<MessageKey, string> = {
+  "settings.androidTitle": "Mobile connection",
+  "settings.androidHint": "VPN can remain connected when the screen closes. Clash Meta proxy mode can coexist; VPN/TUN mode replaces the active VPN.",
+  "settings.androidBattery": "On Honor phones, allow background activity in system app launch management if connections stop after screen lock. Settings vary by MagicOS version.",
   "nav.overview": "Overview",
   "nav.devices": "Devices",
   "nav.networks": "Networks & accounts",

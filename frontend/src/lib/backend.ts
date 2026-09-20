@@ -14,6 +14,7 @@ import type {
   ThemePreference,
 } from "./contracts";
 import { validateLoginURL } from "./externalUrl";
+import { androidBindings, androidCall, androidSubscribe } from "./android";
 
 type RuntimeWindow = Window & {
   chrome?: { webview?: { postMessage?: unknown } };
@@ -489,6 +490,10 @@ function toError(value: unknown): Error {
 
 export async function openExternalURL(url: string) {
   const safeURL = validateLoginURL(url);
+  if (window.HeadscaleAndroid) {
+    await androidCall("OpenURL", [safeURL]);
+    return;
+  }
   if (nativeRuntime) {
     await Browser.OpenURL(safeURL);
     return;
@@ -500,4 +505,8 @@ const bindings = nativeRuntime
   ? (generatedBindings as unknown as BackendBindings)
   : undefined;
 
-export const backend = createBackend(bindings);
+export const backend = createBackend(window.HeadscaleAndroid ? androidBindings() : bindings);
+if (window.HeadscaleAndroid) {
+  backend.subscribe = androidSubscribe(() => backend.getSnapshot());
+  backend.subscribeNavigation = () => () => undefined;
+}

@@ -201,6 +201,18 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] REL-004 Complete license notices for Wails, Tailscale, frontend dependencies. Direct dependencies are recorded; transitive release inventory remains.
 - [>] REL-005 Run accessibility, screenshot, integration, and clean-machine checks. Frontend accessibility/responsive checks and Windows native smoke testing are complete.
 
+## Android preview — M5
+
+- [x] AND-001 Record Android host/service architecture and Honor/Clash proxy scope (ADR 0007).
+- [x] AND-002 Scaffold native VPN host, encrypted state and shared UI bridge.
+- [x] AND-003 Integrate pinned upstream Android 1.102.2 network core and shared business layer.
+- [>] AND-004 Compile APK, check permissions, licenses and bridge/lifecycle behavior.
+- [ ] AND-005 Emulator startup, permission, Activity recreation and VPN revoke acceptance.
+- [ ] AND-006 Honor real-phone login, peer connectivity, background, network handover and Clash proxy acceptance.
+- [ ] AND-007 Production signing, stable update identity and distribution review.
+
+See [Android preview](product/ANDROID.md). These tasks do not imply stable Android support.
+
 ## Verification evidence
 
 - [x] 2026-09-20 Unified macOS PKG, install-time service reuse notices,

@@ -34,7 +34,8 @@ The name describes the primary self-hosted use case, not a provider lock.
 - Hosting a control server.
 - Editing ACLs, users, or server policy.
 - Reimplementing platform VPN drivers or hiding privilege elevation.
-- Supporting Android or iOS VPN extensions.
+- Mobile VPN extensions are outside the desktop MVP. Android is now a separate
+  technical-preview milestone (ADR 0007); iOS remains future work.
 - Claiming feature parity for Serve, Funnel, Tailnet Lock, or every admin API.
 
 ## Core workflows

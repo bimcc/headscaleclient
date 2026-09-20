@@ -23,6 +23,18 @@ Lucide incorporates portions of Feather. Its upstream notice states that
 those portions are copyright Cole Bemis (2013-2022), and the remaining Lucide
 work is copyright Lucide Contributors (2022).
 
+## Android preview
+
+The isolated `mobile/go.mod` pins `github.com/tailscale/tailscale-android` at
+commit `0b3c1bdb207a01e2ec226ad91bd127c295fa5c4b`, upstream Android 1.102.2,
+under BSD-3-Clause (Copyright Tailscale Inc & AUTHORS). It embeds the Tailscale
+Go 1.102.2 core. The upstream Android and Tailscale license texts are copied to
+the APK's assets/licenses directory at build time.
+
+AndroidX WebKit 1.12.1 uses Apache-2.0 (Android Open Source Project).
+Go mobile uses the Go Authors' BSD-3-Clause license. Their upstream notices and
+the module dependency inventories apply alongside the shared frontend notices.
+
 ## Managed daemon payloads
 
 The Windows machine installer may redistribute an unmodified Tailscale

@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">HeadscaleClient Preview</string>
+    <string name="vpn_channel">VPN 连接</string>
+    <string name="vpn_starting">正在建立安全连接…</string>
+    <string name="vpn_connected">VPN 已连接，点击打开客户端</string>
+    <string name="disconnect">断开</string>
+    <string name="vpn_permission_denied">未获得 VPN 授权，请重新连接并在系统提示中允许。</string>
+    <string name="vpn_start_failed">VPN 启动失败，请打开客户端重试。</string>
+    <string name="browser_failed">无法打开浏览器，请确认已安装浏览器。</string>
+    <string name="startup_failed">网络核心启动失败，请重新打开客户端。</string>
+</resources>

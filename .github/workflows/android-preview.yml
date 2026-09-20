@@ -1,0 +1,56 @@
+name: Android preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/android-preview]
+    paths: ['mobile/**', 'internal/**', 'frontend/**', '.github/workflows/android-preview.yml']
+permissions:
+  contents: read
+concurrency:
+  group: android-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: mobile/go.sum
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.21.0'
+      - name: Build shared UI and test mobile boundary
+        run: |
+          pnpm --dir frontend install --frozen-lockfile
+          pnpm --dir frontend test
+          pnpm --dir frontend build
+          cd mobile
+          go test ./bridge
+      - name: Prepare Android SDK
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;28.2.13676358'
+      - name: Build APK with embedded network core
+        env:
+          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.2.13676358
+        run: bash mobile/android/build-preview.sh
+      - name: Upload preview and validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: headscaleclient-android-preview
+          path: |
+            bin/android-preview/*.apk
+            mobile/android/app/build/reports/
+          if-no-files-found: warn

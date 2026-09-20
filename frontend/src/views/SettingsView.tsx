@@ -64,6 +64,7 @@ export function SettingsView({
           </div>
         </header>
         <div className="setting-list">
+          {!diagnostics.platform.startsWith("android") && <>
           <SettingRow
             title={t("settings.launchAtLogin")}
             description={t("settings.launchAtLoginHint")}
@@ -74,6 +75,7 @@ export function SettingsView({
             description={t("settings.closeToTrayHint")}
             control={<Toggle label={t("settings.closeToTray")} checked={settings.closeToTray} disabled={busy === "closeToTray"} onChange={(value) => onSettingChange("closeToTray", value)} />}
           />
+          </>}
           <SettingRow
             title={t("settings.language")}
             description={t("settings.languageHint")}
@@ -97,6 +99,11 @@ export function SettingsView({
           />
         </div>
       </section>
+
+      {diagnostics.platform.startsWith("android") && <section className="section-block">
+        <header className="section-header"><div><h2>{t("settings.androidTitle")}</h2><p>{t("settings.androidHint")}</p></div></header>
+        <p className="muted">{t("settings.androidBattery")}</p>
+      </section>}
 
       <section className="section-block" aria-labelledby="runtime-diagnostics-title">
         <header className="section-header">

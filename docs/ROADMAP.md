@@ -49,6 +49,16 @@ Exit: daily-use feature set passes Windows/macOS/Linux smoke matrix.
 - Compatibility matrix and diagnostics export.
 - Accessibility and responsive screenshot verification.
 
+## M5: Android technical preview (in progress)
+
+- Native foreground VPN service, shared Go business layer and React UI (ADR 0007).
+- Independent APK, Headscale/OIDC and official Tailscale browser login.
+- Keystore identity storage, VPN revoke and Activity/process lifecycle.
+- Honor phone: background/screen-lock, network handover and Clash Meta proxy mode.
+
+Exit: built APK plus emulator smoke evidence; physical-phone acceptance is a
+separate gate before a stable Android release.
+
 ## Later
 
 - Taildrop, subnet advertisement, SSH controls.
@@ -57,4 +67,4 @@ Exit: daily-use feature set passes Windows/macOS/Linux smoke matrix.
 - Trusted macOS Developer ID signing/notarization and real-hardware acceptance
   for the independent launchd edition (ADR 0004); Network Extension/App Store
   delivery is a later option.
-- Mobile clients as separate native VPN-extension projects.
+- iOS as a separate native VPN-extension project; Android store delivery/signing.
