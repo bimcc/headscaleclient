@@ -131,6 +131,19 @@ jobs:
       - name: Build desktop application
         run: go tool wails3 build
 
+      - name: Verify compiled Windows version resource
+        if: runner.os == 'Windows'
+        run: |
+          $ErrorActionPreference = "Stop"
+          $expectedVersion = (Get-Content VERSION -Raw).Trim()
+          $info = (Get-Item bin/headscaleclient.exe).VersionInfo
+          if ($info.FileVersion -ne $expectedVersion -or $info.ProductVersion -ne $expectedVersion -or
+              $info.FileVersionRaw.ToString() -ne "$expectedVersion.0" -or
+              $info.ProductVersionRaw.ToString() -ne "$expectedVersion.0" -or
+              $info.CompanyName -ne 'BIMCC., Ltd.' -or $info.ProductName -ne 'HeadscaleClient') {
+            throw "The built Windows executable has incomplete or incorrect version information: $info"
+          }
+
       - name: Verify service-bearing Linux package
         if: runner.os == 'Linux'
         run: |
