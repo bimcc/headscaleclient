@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$(go env GOPATH)/bin:$PATH"
+export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk/28.2.13676358}"
 go mod download
 go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240806205939-81131f6468ab
 go install golang.org/x/mobile/cmd/gobind@v0.0.0-20240806205939-81131f6468ab

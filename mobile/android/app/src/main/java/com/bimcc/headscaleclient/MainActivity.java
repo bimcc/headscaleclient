@@ -22,6 +22,7 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
     private Runnable afterPermission;
     private Runnable deniedPermission;
     private boolean destroyed;
+    private final Handler main = new Handler(Looper.getMainLooper());
     private final AtomicInteger pending = new AtomicInteger();
 
     @Override public void onCreate(Bundle state) {
@@ -60,10 +61,14 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
                     boolean opened = args.length() == 1 && openBrowser(args.getString(0));
                     respond(reply, id, opened ? "{\"result\":null}" : error(getString(R.string.browser_failed))); return;
                 }
+                boolean wasDesired = app.desired();
                 Runnable execute = () -> app.worker.execute(() -> {
                     try {
                         String response = app.awaitClient().request(method, args.toString());
                         boolean ok = !new JSONObject(response).has("error");
+                        if (!ok && !wasDesired && ("BeginLogin".equals(method) || "SwitchProfile".equals(method) || "SetConnection".equals(method))) {
+                            app.setDesired(false); stopService(new Intent(this, TunnelService.class));
+                        }
                         if (ok && ("Logout".equals(method) || ("SetConnection".equals(method) && !args.getBoolean(0)))) {
                             app.setDesired(false); stopService(new Intent(this, TunnelService.class));
                         }
@@ -81,7 +86,15 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
                     };
                     Intent permission = VpnService.prepare(this);
                     if (permission == null) start.run();
-                    else { afterPermission = start; deniedPermission = () -> respond(reply,id,error(getString(R.string.vpn_permission_denied))); startActivityForResult(permission, 100); }
+                    else {
+                        afterPermission = start; deniedPermission = () -> respond(reply,id,error(getString(R.string.vpn_permission_denied)));
+                        main.postDelayed(() -> {
+                            if (afterPermission != start) return;
+                            Runnable deny = deniedPermission; afterPermission = null; deniedPermission = null;
+                            if (deny != null) deny.run();
+                        }, 30000);
+                        startActivityForResult(permission, 100);
+                    }
                 } else execute.run();
             } catch (Exception ignored) { /* Invalid bridge envelopes have no authority. */ }
         });
@@ -126,6 +139,7 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
     }
     @Override protected void onDestroy() {
         destroyed = true; app.listeners.remove(this); afterPermission = null; deniedPermission = null;
+        main.removeCallbacksAndMessages(null);
         if (web != null) { WebViewCompat.removeWebMessageListener(web,"HeadscaleAndroid"); web.destroy(); }
         // Deliberately leave the Application's Go runtime and VPN service alive.
         super.onDestroy();

@@ -15,7 +15,7 @@ describe("Android bridge", () => {
   it("times out requests without silently switching to demo data", async () => {
     vi.useFakeTimers(); window.HeadscaleAndroid = { postMessage: () => {} };
     const request = androidCall("SetConnection", [true]); const rejected = expect(request).rejects.toThrow();
-    await vi.advanceTimersByTimeAsync(60001); await rejected;
+    await vi.advanceTimersByTimeAsync(90001); await rejected;
   });
   it("refreshes on foreground return and stops listening when unmounted", async () => {
     const getSnapshot = vi.fn().mockResolvedValue({ source: "native" }); const onSnapshot = vi.fn();

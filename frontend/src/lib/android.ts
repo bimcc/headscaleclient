@@ -27,7 +27,7 @@ export function androidCall<T>(method: string, args: unknown[] = []): Promise<T>
   if (pending.size >= 8) return Promise.reject(new Error("Too many pending Android operations"));
   return new Promise<T>((resolve, reject) => {
     const id = `${++sequence}`;
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(document.documentElement.lang.startsWith("zh") ? "操作超时，请检查 VPN 授权和网络后重试。" : "Operation timed out. Check VPN permission and connectivity.")); }, 60000);
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(document.documentElement.lang.startsWith("zh") ? "操作超时，请检查 VPN 授权和网络后重试。" : "Operation timed out. Check VPN permission and connectivity.")); }, 90000);
     pending.set(id, { resolve: resolve as (value: unknown) => void, reject, timer });
     try { host.postMessage(JSON.stringify({ id, method, args })); }
     catch (error) { clearTimeout(timer); pending.delete(id); reject(error); }
