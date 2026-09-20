@@ -9,7 +9,7 @@ app="$root/bin/headscaleclient.app"
 payload="$root/bin/daemon/darwin-$arch"
 version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")
 for binary in "$app/Contents/MacOS/headscaleclient" "$payload/tailscale" "$payload/tailscaled"; do
-  lipo -verify_arch "$machine_arch" "$binary"
+  lipo "$binary" -verify_arch "$machine_arch"
   codesign --verify --strict "$binary"
 done
 codesign --verify --deep --strict "$app"

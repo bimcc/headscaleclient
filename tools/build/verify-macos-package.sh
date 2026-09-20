@@ -9,6 +9,17 @@ service_root='/Library/Application Support/BIMCC/HeadscaleClient'
 socket='/var/run/headscaleclient-tailscaled.socket'
 cli="$service_root/daemon/tailscale"
 
+# Keep failures actionable on the disposable runner without leaking real state.
+diagnose() {
+  result=$?
+  if [[ $result -ne 0 ]]; then
+    sudo tail -n 80 /var/log/install.log || true
+    sudo launchctl print system/io.headscaleclient.tailscaled || true
+  fi
+  exit "$result"
+}
+trap diagnose EXIT
+
 sudo installer -pkg "$pkg" -target /
 sudo "$cli" --socket="$socket" status --json | tee bin/macos-initial-status.json
 node -e 'const s=JSON.parse(require("fs").readFileSync("bin/macos-initial-status.json")); if(s.BackendState!=="NeedsLogin") throw Error("unexpected fresh state: "+s.BackendState)'
