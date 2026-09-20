@@ -15,6 +15,7 @@ their corresponding behavior.
 7. [Roadmap](ROADMAP.md): delivery milestones.
 8. [Task list](TASKS.md): executable work and current status.
 9. [Verification](verification/): dated, sanitized platform and integration evidence.
+10. [macOS edition](product/MACOS.md): installer choice, service ownership, build and acceptance.
 
 ## Document rules
 

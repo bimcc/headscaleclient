@@ -54,5 +54,7 @@ Exit: daily-use feature set passes Windows/macOS/Linux smoke matrix.
 - Taildrop, subnet advertisement, SSH controls.
 - Provider-specific admin adapters.
 - Real-host Linux systemd install, upgrade, and uninstall matrix.
-- Signed macOS Network Extension and privileged helper.
+- Trusted macOS Developer ID signing/notarization and real-hardware acceptance
+  for the independent launchd edition (ADR 0004); Network Extension/App Store
+  delivery is a later option.
 - Mobile clients as separate native VPN-extension projects.

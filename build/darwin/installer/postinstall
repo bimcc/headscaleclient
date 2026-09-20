@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+/bin/sh '/Library/Application Support/BIMCC/HeadscaleClient/service-control' start

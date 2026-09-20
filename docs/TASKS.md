@@ -154,7 +154,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] MDE-005 Preserve an external Windows service during isolated install and uninstall.
 - [>] MDE-006 Verify managed-service install, repair, and uninstall on a clean Windows VM.
 - [>] MDE-007 Add independent Linux systemd packages and privilege policy. Runtime lifecycle, verified AMD64/ARM64 payloads, native-package scripts, and CI package inspection are implemented; real systemd host installation remains.
-- [ ] MDE-008 Add signed macOS Network Extension and privileged helper.
+- [>] MDE-008 Add independent macOS launchd/utun service packages (ADR 0004).
+  Native Apple Silicon/Intel packaging and lifecycle checks implemented;
+  real-Mac networking acceptance and trusted signing remain.
 - [>] MDE-009 Sign the GUI, daemon-bearing installer, and update manifest. The
   Windows build now signs the GUI before packaging and the outer installer
   afterward; a public BIMCC Authenticode certificate and update signing remain.
@@ -170,6 +172,12 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] REL-005 Run accessibility, screenshot, integration, and clean-machine checks. Frontend accessibility/responsive checks and Windows native smoke testing are complete.
 
 ## Verification evidence
+
+- [>] 2026-09-20 Upgrade Wails Go/CLI/runtime to beta.23; review beta.20 loader
+  removal and beta.19 macOS private API gating; rebuild Windows installer.
+
+- [>] 2026-09-20 macOS Apple Silicon/Intel independent PKG builds, native tests,
+  initial install, LocalAPI permissions, restart, upgrade, GUI launch and removal.
 
 - [x] 2026-08-15 Windows native build and lifecycle smoke test.
 - [x] 2026-08-15 Live LocalAPI read against `tailscaled 1.102.2`.

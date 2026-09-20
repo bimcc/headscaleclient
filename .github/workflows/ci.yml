@@ -16,7 +16,7 @@ env:
   GO_VERSION: "1.26.5"
   NODE_VERSION: "24"
   PNPM_VERSION: "11.21.0"
-  WAILS_VERSION: "v3.0.0-beta.8"
+  WAILS_VERSION: "v3.0.0-beta.23"
   TAILSCALE_VERSION: "v1.102.2"
 
 jobs:

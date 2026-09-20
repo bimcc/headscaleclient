@@ -8,6 +8,28 @@ vars:
   CROSS_IMAGE: wails-cross
 
 tasks:
+  prepare:daemon:
+    summary: Builds pinned upstream macOS CLI and daemon with checksum provenance
+    platforms: [darwin]
+    cmds:
+      - go run ./tools/daemon/darwin --arch {{.ARCH}}
+    vars:
+      ARCH: '{{.ARCH | default ARCH}}'
+
+  package:installer:
+    summary: Creates the independent macOS PKG and a GUI-only ZIP
+    platforms: [darwin]
+    cmds:
+      - task: package
+        vars:
+          ARCH: '{{.ARCH}}'
+      - task: prepare:daemon
+        vars:
+          ARCH: '{{.ARCH}}'
+      - bash tools/build/package-macos.sh {{.ARCH}}
+    vars:
+      ARCH: '{{.ARCH | default ARCH}}'
+
   build:
     summary: Builds the application
     cmds:

@@ -27,7 +27,7 @@ func TestGetSnapshotReturnsConfiguredOfflineState(t *testing.T) {
 	clock := time.Date(2026, 8, 15, 4, 5, 6, 0, time.UTC)
 	service := mustService(t, daemon, store, nil,
 		WithClock(func() time.Time { return clock }),
-		WithDiagnostics("0.1.0", "3.0.0-beta.8", "localapi", "test/amd64"),
+		WithDiagnostics("0.1.0", "3.0.0-beta.23", "localapi", "test/amd64"),
 	)
 
 	snapshot, err := service.GetSnapshot()

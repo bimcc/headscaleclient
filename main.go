@@ -55,7 +55,7 @@ func main() {
 		desktopRuntime,
 		appservice.WithAutostart(desktopRuntime),
 		appservice.WithDaemonLifecycle(daemon.NewManager()),
-		appservice.WithDiagnostics(appVersion, "3.0.0-beta.8", "tailscaled LocalAPI", runtime.GOOS+"/"+runtime.GOARCH),
+		appservice.WithDiagnostics(appVersion, "3.0.0-beta.23", "tailscaled LocalAPI", runtime.GOOS+"/"+runtime.GOARCH),
 	)
 	if err != nil {
 		log.Fatal(err)

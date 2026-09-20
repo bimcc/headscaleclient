@@ -1,0 +1,72 @@
+#!/bin/sh
+# Fixed operations for the product-owned launchd service only.
+set -eu
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+service_root='/Library/Application Support/BIMCC/HeadscaleClient'
+plist='/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist'
+job='system/io.headscaleclient.tailscaled'
+socket='/var/run/headscaleclient-tailscaled.socket'
+
+fail() { printf '%s\n' "$*" >&2; exit 1; }
+[ "$(id -u)" -eq 0 ] || fail '请使用管理员授权。 Administrator approval is required.'
+
+trusted() {
+  [ ! -L "$1" ] && [ "$(stat -f '%u' "$1")" = 0 ] || fail "Unsafe service path: $1"
+  mode=$(stat -f '%Lp' "$1")
+  [ $((0$mode & 022)) -eq 0 ] || fail "Service path is writable by other users: $1"
+}
+for parent in '/Library' '/Library/Application Support' '/Library/Application Support/BIMCC' "$service_root" "$service_root/daemon" '/Library/LaunchDaemons'; do
+  trusted "$parent"
+done
+trusted "$plist"
+trusted "$service_root/service-control"
+trusted "$service_root/daemon/tailscaled"
+trusted "$service_root/daemon/tailscale"
+[ "$(/usr/libexec/PlistBuddy -c 'Print :Label' "$plist")" = 'io.headscaleclient.tailscaled' ] || fail 'Unexpected service label.'
+[ "$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' "$plist")" = "$service_root/daemon/tailscaled" ] || fail 'Unexpected service executable.'
+
+check_conflicts() {
+  [ ! -d /Applications/Tailscale.app ] || fail '检测到 Tailscale.app。请使用 GUI-only 版，或先卸载官方客户端。 Tailscale.app is installed; use the GUI-only build or uninstall it first.'
+  for other in /Library/LaunchDaemons/com.tailscale.tailscaled.plist /Library/LaunchDaemons/homebrew.mxcl.tailscale.plist /Library/LaunchDaemons/homebrew.mxcl.tailscaled.plist; do
+    [ ! -e "$other" ] || fail "Existing Tailscale service: $other. Use the GUI-only build."
+  done
+  # Also catch manually launched daemons and GUI network extensions.
+  for process in $(pgrep -x tailscaled || true); do
+    command=$(ps -p "$process" -o command=)
+    case "$command" in "$service_root/daemon/tailscaled"*) ;; *) fail '另一套 Tailscale 正在运行。 Another Tailscale daemon is running.' ;; esac
+  done
+  if pgrep -f 'Tailscale[.]app/Contents/|io[.]tailscale[.]ipn[.](macsys|network-extension)' >/dev/null; then
+    fail '请先退出其他 Tailscale 客户端。 Quit the other Tailscale client before starting this service.'
+  fi
+}
+
+case "${1:-}" in
+  start)
+    check_conflicts
+    [ ! -L "$service_root/state" ] || fail 'Unsafe state directory.'
+    if [ ! -d "$service_root/state" ]; then
+      install -d -o root -g wheel -m 700 "$service_root/state"
+    fi
+    trusted "$service_root/state"
+    chmod 700 "$service_root/state"
+    launchctl enable "$job"
+    if ! launchctl print "$job" >/dev/null 2>&1; then
+      launchctl bootstrap system "$plist"
+    fi
+    launchctl kickstart "$job"
+    # Registration is not success: require a working LocalAPI before returning.
+    count=0
+    until "$service_root/daemon/tailscale" --socket="$socket" status --json >/dev/null 2>&1; do
+      count=$((count + 1))
+      [ "$count" -lt 30 ] || fail '网络服务未就绪，请检查 launchctl 服务状态。 Network service LocalAPI did not become ready.'
+      sleep 1
+    done
+    ;;
+  stop)
+    if launchctl print "$job" >/dev/null 2>&1; then
+      launchctl bootout "$job"
+    fi
+    ;;
+  *) fail 'Usage: service-control start|stop' ;;
+esac

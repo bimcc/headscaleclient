@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>io.headscaleclient.tailscaled</string>
+  <key>ProgramArguments</key><array>
+    <string>/Library/Application Support/BIMCC/HeadscaleClient/daemon/tailscaled</string>
+    <string>--state=/Library/Application Support/BIMCC/HeadscaleClient/state/tailscaled.state</string>
+    <string>--statedir=/Library/Application Support/BIMCC/HeadscaleClient/state</string>
+    <string>--socket=/var/run/headscaleclient-tailscaled.socket</string>
+    <string>--tun=utun</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>WorkingDirectory</key><string>/Library/Application Support/BIMCC/HeadscaleClient</string>
+</dict></plist>

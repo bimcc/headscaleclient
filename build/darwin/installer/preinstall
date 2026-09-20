@@ -1,0 +1,36 @@
+#!/bin/sh
+set -eu
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+fail() { printf '%s\n' "$*" >&2; exit 1; }
+# Offline volumes cannot safely register a live launchd service.
+[ "${3:-/}" = / ] || fail 'Install HeadscaleClient on the running macOS system volume.'
+if pgrep -x headscaleclient >/dev/null; then
+  fail '请先从菜单栏退出 HeadscaleClient，再重新安装。 Quit HeadscaleClient from the menu bar and retry installation.'
+fi
+[ ! -d /Applications/Tailscale.app ] || fail '已安装 Tailscale.app。请使用 GUI-only 版，或先卸载官方客户端再安装。 Tailscale.app is installed. Use the GUI-only build or uninstall it first.'
+for other in /Library/LaunchDaemons/com.tailscale.tailscaled.plist /Library/LaunchDaemons/homebrew.mxcl.tailscale.plist /Library/LaunchDaemons/homebrew.mxcl.tailscaled.plist; do
+  [ ! -e "$other" ] || fail "An external Tailscale service exists: $other. Use the GUI-only build."
+done
+service_root='/Library/Application Support/BIMCC/HeadscaleClient'
+plist='/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist'
+# Installer must not write root executables through a user-controlled symlink.
+for path in '/Applications/HeadscaleClient.app' '/Library/Application Support' '/Library/Application Support/BIMCC' "$service_root" "$service_root/daemon" "$service_root/state" '/Library/LaunchDaemons' "$plist"; do
+  [ ! -L "$path" ] || fail "Unsafe symlink at installation target: $path"
+  if [ -e "$path" ]; then
+    [ "$(stat -f '%u' "$path")" = 0 ] || fail "Installation target is not root-owned: $path"
+    mode=$(stat -f '%Lp' "$path")
+    [ $((0$mode & 022)) -eq 0 ] || fail "Installation target is writable by other users: $path"
+  fi
+done
+for process in $(pgrep -x tailscaled || true); do
+  command=$(ps -p "$process" -o command=)
+  case "$command" in "$service_root/daemon/tailscaled"*) ;; *) fail 'Another tailscaled is running; stop it before installation.' ;; esac
+done
+if pgrep -f 'Tailscale[.]app/Contents/|io[.]tailscale[.]ipn[.](macsys|network-extension)' >/dev/null; then
+  fail 'Quit the other Tailscale client before installation.'
+fi
+if launchctl print system/io.headscaleclient.tailscaled >/dev/null 2>&1; then
+  [ "$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' "$plist")" = "$service_root/daemon/tailscaled" ] || fail 'Unexpected existing service executable.'
+  launchctl bootout system/io.headscaleclient.tailscaled
+fi

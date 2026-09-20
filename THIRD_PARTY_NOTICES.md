@@ -8,9 +8,9 @@ transitive dependencies. The upstream license files are authoritative.
 
 | Dependency | Version | License | Upstream |
 | --- | --- | --- | --- |
-| Wails v3 (`github.com/wailsapp/wails/v3`) | `v3.0.0-beta.8` | MIT | <https://github.com/wailsapp/wails> |
+| Wails v3 (`github.com/wailsapp/wails/v3`) | `v3.0.0-beta.23` | MIT | <https://github.com/wailsapp/wails> |
 | Tailscale Go module (`tailscale.com`) | `v1.102.2` | BSD-3-Clause | <https://github.com/tailscale/tailscale> |
-| Wails runtime (`@wailsio/runtime`) | `3.0.0-beta.8` | MIT | <https://github.com/wailsapp/wails> |
+| Wails runtime (`@wailsio/runtime`) | `3.0.0-beta.23` | MIT | <https://github.com/wailsapp/wails> |
 | Lucide React (`lucide-react`) | `0.468.0` | ISC | <https://github.com/lucide-icons/lucide> |
 | React (`react`) | `18.3.1` | MIT | <https://github.com/facebook/react> |
 | React DOM (`react-dom`) | `18.3.1` | MIT | <https://github.com/facebook/react> |
@@ -44,6 +44,13 @@ Linux DEB/RPM/Arch packages may redistribute the unmodified Tailscale
 archive and file hashes are recorded in `build/daemon/manifest.json`, and the
 full Tailscale license is installed under
 `/usr/share/doc/headscaleclient/daemon/`.
+
+macOS packages include BIMCC-built `tailscaled` and `tailscale` executables from
+the unmodified `tailscale.com v1.102.2` source module. The build verifies the
+source module against `go.sum`, records provenance and executable hashes, and
+installs the full upstream license under
+`/Library/Application Support/BIMCC/HeadscaleClient/daemon/licenses/`.
+These are independent source builds, not official Tailscale signed binaries.
 
 ## Direct build and test dependencies
 

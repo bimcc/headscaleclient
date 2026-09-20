@@ -10,7 +10,7 @@ NAT traversal, routing, and DNS remain owned by the upstream daemon.
 
 ## Current baseline
 
-- Wails `v3.0.0-beta.8`
+- Wails `v3.0.0-beta.23`
 - Go `1.26.5`
 - `tailscale.com` `v1.102.2`
 - React + TypeScript
@@ -23,13 +23,13 @@ NAT traversal, routing, and DNS remain owned by the upstream daemon.
 - Go `1.26.5`
 - Node.js `24`
 - pnpm `11.21.0`
-- Wails CLI `v3.0.0-beta.8`
+- Wails CLI `v3.0.0-beta.23`
 - An existing `tailscaled` daemon for live LocalAPI development
 
 Install the pinned Wails CLI and pnpm versions with:
 
 ```sh
-go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.8
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23
 npm install --global pnpm@11.21.0
 ```
 
@@ -51,6 +51,10 @@ The native development binary reuses the host daemon. The full Windows machine
 installer and Linux DEB/RPM/Arch packages include and manage the verified
 upstream service when one is not already installed. The GUI-only Linux AppImage
 continues to require an external daemon.
+
+The macOS preview adds independent Apple Silicon and Intel PKG installers with
+a launchd-managed `tailscaled` service. A GUI-only ZIP reuses an existing
+compatible Tailscale service. See [macOS installation and limits](docs/product/MACOS.md).
 
 ## Development
 
@@ -131,6 +135,19 @@ license, and `headscaleclient-tailscaled.service`. They preserve an existing
 `tailscaled.service`; only the HeadscaleClient-owned unit is disabled on
 uninstall. `linux:package:gui-only` creates an AppImage without a daemon.
 
+## macOS packaging
+
+On macOS, build the independent installer for your CPU:
+
+```sh
+go tool wails3 task darwin:package:installer ARCH=arm64
+# Intel: use ARCH=amd64
+```
+
+The `macOS packages` workflow builds both CPU variants on Macs and produces
+`bin/headscaleclient-macos-<arch>-installer.pkg`, a GUI-only ZIP, SHA-256 sums
+and daemon provenance. The preview is ad-hoc signed and not notarized.
+
 ## Repository layout
 
 - [`frontend/`](frontend/) contains the React and TypeScript interface.
@@ -171,5 +188,7 @@ The Windows MVP and unsigned independent machine installer have passed native
 and isolated install/uninstall smoke verification. Service-bearing Linux package
 implementation and supply-chain verification are complete; installation on a
 real systemd desktop remains to be verified. Signing, fresh-machine testing,
-Headscale login completion, and independent macOS distribution remain release
-work. The authoritative state is maintained in [docs/TASKS.md](docs/TASKS.md).
+Headscale login completion, macOS real-network acceptance and trusted Apple
+signing/notarization remain release work. The macOS independent packaging and
+native verification workflow are implemented as a preview. The authoritative
+state is maintained in [docs/TASKS.md](docs/TASKS.md).

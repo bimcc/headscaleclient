@@ -1,0 +1,5 @@
+# macOS/Linux installer scripts must retain LF even from a Windows checkout.
+*.sh text eol=lf
+build/darwin/installer/* text eol=lf
+build/darwin/service/service-control text eol=lf
+build/darwin/service/uninstall-service text eol=lf

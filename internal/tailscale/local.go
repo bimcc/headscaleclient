@@ -15,7 +15,7 @@ type localDaemon struct {
 }
 
 func newLocalDaemon() *localDaemon {
-	return &localDaemon{client: &local.Client{}}
+	return &localDaemon{client: newLocalClient()}
 }
 
 func (d *localDaemon) Status(ctx context.Context) (*ipnstate.Status, error) {

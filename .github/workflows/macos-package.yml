@@ -1,0 +1,82 @@
+name: macOS packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/macos-package.yml'
+      - 'build/darwin/**'
+      - 'tools/build/*macos*'
+      - 'tools/daemon/darwin/**'
+      - 'internal/**'
+      - 'frontend/**'
+      - 'main.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'build/daemon/manifest.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: macOS ${{ matrix.arch }} installer
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: amd64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.21.0'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Check architecture and upstream module
+        run: |
+          test "$(go env GOARCH)" = '${{ matrix.arch }}'
+          go mod download
+          go mod verify
+      - name: Build independent installer and GUI-only archive
+        run: go tool wails3 task darwin:package:installer ARCH=${{ matrix.arch }}
+      - name: Verify backend
+        run: |
+          go test ./...
+          go vet ./...
+      - name: Verify frontend
+        working-directory: frontend
+        run: pnpm test
+      - name: Verify install, LocalAPI, upgrade and removal
+        run: bash tools/build/verify-macos-package.sh '${{ matrix.arch }}'
+      - name: Upload macOS packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: headscaleclient-macos-${{ matrix.arch }}
+          if-no-files-found: error
+          path: |
+            bin/headscaleclient-macos-${{ matrix.arch }}-installer.pkg
+            bin/headscaleclient-macos-${{ matrix.arch }}-gui-only.zip
+            bin/headscaleclient-macos-${{ matrix.arch }}-SHA256SUMS.txt
+            bin/daemon/darwin-${{ matrix.arch }}/provenance.json
+          retention-days: 30

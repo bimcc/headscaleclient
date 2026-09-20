@@ -4,7 +4,7 @@
 
 | Component | Version | Policy |
 | --- | --- | --- |
-| Wails | `v3.0.0-beta.8` | Exact pin while v3 is beta |
+| Wails | `v3.0.0-beta.23` | Exact pin while v3 is beta |
 | Go | `1.26.5` | Match the selected Tailscale module |
 | Tailscale module | `v1.102.2` | Upgrade only in a dedicated compatibility change |
 | Frontend | React + TypeScript + Vite | Strict TypeScript |
@@ -94,7 +94,7 @@ relay badge in the WebView or tray.
 ## Desktop quick surfaces
 
 The main WebView is the detailed management surface. A native Wails
-`SystemTray` menu is the quick interaction surface. `v3.0.0-beta.8` provides
+`SystemTray` menu is the quick interaction surface. `v3.0.0-beta.23` provides
 runtime menu replacement, submenus, radio items, checkboxes, tray click
 handlers, and window show/hide APIs on the supported desktop platforms.
 
