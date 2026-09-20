@@ -206,12 +206,14 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] AND-001 Record Android host/service architecture and Honor/Clash proxy scope (ADR 0007).
 - [x] AND-002 Scaffold native VPN host, encrypted state and shared UI bridge.
 - [x] AND-003 Integrate pinned upstream Android 1.102.2 network core and shared business layer.
-- [>] AND-004 Compile APK, check permissions, licenses and bridge/lifecycle behavior.
-- [ ] AND-005 Emulator startup, permission, Activity recreation and VPN revoke acceptance.
+- [x] AND-004 Compile ARM64/x86_64 APK, verify signature, licenses and bridge/lifecycle behavior.
+- [>] AND-005 Emulator native startup, authorized foreground service, Activity recreation and disconnect passed; permission denial and real OS VPN revocation remain.
 - [ ] AND-006 Honor real-phone login, peer connectivity, background, network handover and Clash proxy acceptance.
 - [ ] AND-007 Production signing, stable update identity and distribution review.
 
 See [Android preview](product/ANDROID.md). These tasks do not imply stable Android support.
+See [Android verification](verification/ANDROID-PREVIEW-2026-09-21.md) for the APK hash,
+four emulator tests, initial resource sample and remaining physical-phone gates.
 
 ## Verification evidence
 

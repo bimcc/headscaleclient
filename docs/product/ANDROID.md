@@ -1,7 +1,9 @@
 # Android technical preview
 
-Status: implementation and build verification in progress. This is not a stable
-Android release. Desktop remains 0.2.1 / Wails beta.20.
+Status: installable technical preview, APK and emulator checks passed on
+2026-09-21. Honor physical-phone acceptance remains pending. This is not a stable
+Android release. See [verification evidence](../verification/ANDROID-PREVIEW-2026-09-21.md).
+Desktop remains 0.2.1 / Wails beta.20.
 
 ## Product
 
