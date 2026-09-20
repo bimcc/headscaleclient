@@ -27,6 +27,17 @@ See [release notes](docs/releases/v0.2.1.md),
 [release verification](docs/verification/RELEASE-0.2.1.md) and
 [beta.20 comparison evidence](docs/verification/WAILS-BETA20-TRIAL-2026-09-20.md).
 
+## Android technical preview
+
+Android development is on the `codex/android-preview` branch. The independent
+APK embeds the pinned Tailscale 1.102.2 core, uses a native foreground VPN service
+and reuses the React UI and Go application layer. It does not require the
+official Tailscale app. See [Android architecture, build and acceptance](docs/product/ANDROID.md).
+
+The initial target is an Honor phone using Clash Meta in proxy mode. Physical
+phone background/network tests and production signing remain acceptance gates;
+Android is not part of the stable desktop release yet.
+
 ## Development prerequisites
 
 - Go `1.26.5`

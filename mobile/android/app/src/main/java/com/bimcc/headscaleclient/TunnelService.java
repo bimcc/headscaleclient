@@ -21,6 +21,7 @@ public final class TunnelService extends VpnService implements IPNService {
     private final String instanceId = UUID.randomUUID().toString();
     private final AtomicBoolean attached = new AtomicBoolean();
     private ClientApplication app;
+    private volatile boolean established;
     private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
     @Override public void onCreate() {
         super.onCreate(); app = (ClientApplication) getApplication();
@@ -30,13 +31,14 @@ public final class TunnelService extends VpnService implements IPNService {
         if ((intent != null && DISCONNECT.equals(intent.getAction())) || !app.desired() || prepare(this) != null) {
             disconnectVPN(); return START_NOT_STICKY;
         }
-        startForeground(1, notification(false));
+        startForeground(1, notification(established));
         app.activeVPN.set(instanceId);
         app.vpnWorker.execute(() -> {
             try {
                 if (!instanceId.equals(app.activeVPN.get()) || !app.desired()) return;
+                engine.Client runtime = app.awaitClient();
                 if (attached.compareAndSet(false, true)) {
-                    app.awaitClient().setVPNState(true, false);
+                    runtime.setVPNState(true, false);
                     Libtailscale.requestVPN(this);
                 }
                 // A sticky restart restores only previously authorized intent.
@@ -77,6 +79,8 @@ public final class TunnelService extends VpnService implements IPNService {
         };
     }
     @Override public void updateVpnStatus(boolean connected) {
+        if (!instanceId.equals(app.activeVPN.get())) return;
+        established = connected;
         app.vpnWorker.execute(() -> {
             if (!instanceId.equals(app.activeVPN.get())) return;
             try { app.awaitClient().setVPNState(app.desired(), connected); } catch (Exception ignored) {}

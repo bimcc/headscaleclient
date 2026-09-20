@@ -61,6 +61,16 @@ public final class ClientApplication extends Application implements AppContext, 
                     });
                 Client runtime = Engine.start(getFilesDir().getAbsolutePath(), this, this);
                 runtime.setVPNState(false, false);
+                // The upstream constructor returns before its backend is ready.
+                // Do not send an unbuffered RequestVPN to a failed initializer.
+                long deadline = SystemClock.elapsedRealtime() + 25000;
+                boolean ready = false;
+                while (SystemClock.elapsedRealtime() < deadline) {
+                    JSONObject result = new JSONObject(runtime.request("GetSnapshot", "[]")).optJSONObject("result");
+                    if (result != null && "ready".equals(result.getJSONObject("runtime").optString("daemon"))) { ready = true; break; }
+                    Thread.sleep(250);
+                }
+                if (!ready) throw new Exception("embedded backend readiness timeout");
                 client.complete(runtime);
             } catch (Exception e) { client.completeExceptionally(e); }
         });

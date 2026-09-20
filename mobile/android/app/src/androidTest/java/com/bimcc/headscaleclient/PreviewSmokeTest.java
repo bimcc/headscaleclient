@@ -1,6 +1,8 @@
 package com.bimcc.headscaleclient;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.VpnService;
 import android.net.Uri;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
@@ -14,15 +16,20 @@ import java.util.concurrent.TimeUnit;
 import engine.Client;
 import org.json.JSONObject;
 import org.junit.Test;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
 public class PreviewSmokeTest {
-    @Test public void embeddedCoreSurvivesActivityRecreation() throws Exception {
+    @Before public void grantEmulatorNotificationPermission() {
         ClientApplication app = ApplicationProvider.getApplicationContext();
         if (Build.VERSION.SDK_INT >= 33) InstrumentationRegistry.getInstrumentation().getUiAutomation()
             .grantRuntimePermission(app.getPackageName(), android.Manifest.permission.POST_NOTIFICATIONS);
+    }
+
+    @Test public void embeddedCoreSurvivesActivityRecreation() throws Exception {
+        ClientApplication app = ApplicationProvider.getApplicationContext();
         try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
             Client client = app.awaitClient();
             JSONObject response = new JSONObject(client.request("GetSnapshot", "[]"));
@@ -39,6 +46,28 @@ public class PreviewSmokeTest {
             assertOverviewRendered(activity);
             assertTrue(new JSONObject(client.request("CallLocalAPI", "[\"prefs\"]")).has("error"));
         }
+    }
+
+    @Test public void authorizedForegroundServiceSurvivesScreenRecreationAndDisconnects() throws Exception {
+        ClientApplication app = ApplicationProvider.getApplicationContext(); app.awaitClient();
+        // This grants permission only inside the disposable emulator. Production
+        // always uses VpnService.prepare and the Android user-consent dialog.
+        try (android.os.ParcelFileDescriptor command = InstrumentationRegistry.getInstrumentation().getUiAutomation()
+            .executeShellCommand("appops set " + app.getPackageName() + " ACTIVATE_VPN allow");
+             java.io.InputStream output = new android.os.ParcelFileDescriptor.AutoCloseInputStream(command)) {
+            byte[] buffer = new byte[1024]; while (output.read(buffer) != -1) { }
+        }
+        assertNull("Emulator VPN authorization", VpnService.prepare(app));
+        try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
+            app.setDesired(true);
+            activity.onActivity(screen -> screen.startForegroundService(new Intent(screen, TunnelService.class)));
+            for (int i = 0; i < 50 && app.activeVPN.get() == null; i++) Thread.sleep(200);
+            String serviceId = app.activeVPN.get(); assertNotNull("Foreground service did not start", serviceId);
+            activity.recreate(); assertEquals(serviceId, app.activeVPN.get());
+            activity.onActivity(screen -> screen.startService(new Intent(screen, TunnelService.class).setAction(TunnelService.DISCONNECT)));
+            for (int i = 0; i < 50 && app.activeVPN.get() != null; i++) Thread.sleep(200);
+            assertNull("Foreground service did not stop", app.activeVPN.get()); assertFalse(app.desired());
+        } finally { app.setDesired(false); app.stopService(new Intent(app, TunnelService.class)); }
     }
 
     private void assertOverviewRendered(ActivityScenario<MainActivity> activity) throws Exception {

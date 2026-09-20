@@ -55,6 +55,10 @@ Debug keys may differ across build machines: upgrades need the same signing key,
 otherwise uninstalling loses app-local accounts/settings. Stable signing is
 required before distributing production Android updates.
 
+Local builds recompile the Go core. Only CI opts into a cached AAR after checking
+its key against the native sources and dependency locks. Desktop Wails dependencies
+stay pinned; the Android host uses no Wails Activity lifecycle.
+
 ## Acceptance gate
 
 - Build ARM64 and x86_64 with full network core; verify APK signature and licenses.

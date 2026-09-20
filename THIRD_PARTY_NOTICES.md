@@ -1,7 +1,8 @@
 # Third-Party Notices
 
 This document lists only the dependencies declared directly by HeadscaleClient
-in `go.mod` and `frontend/package.json`. It is not a complete inventory of
+in `go.mod`, `mobile/go.mod` and `frontend/package.json`, plus the Android host
+dependencies listed below. It is not a complete inventory of
 transitive dependencies. The upstream license files are authoritative.
 
 ## Runtime and application dependencies
