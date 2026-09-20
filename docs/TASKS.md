@@ -22,6 +22,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] REP-003 Configure pnpm, strict TypeScript, lint, format, and tests. Type checking and tests are configured; lint and format checks remain.
 - [x] REP-004 Add build/test scripts that do not depend on a global Wails install.
 - [x] REP-005 Add baseline CI matrix for Windows, macOS, and Linux.
+- [x] REP-006 Upgrade Wails Go module, CLI, runtime and diagnostics to beta.23;
+  preserve installer customizations and verify all three desktop build targets.
 
 ## Domain and application backend
 
@@ -167,16 +169,19 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 
 - [>] REL-001 Establish supported daemon compatibility matrix. `tailscaled 1.102.2` and Headscale `v0.29.3` are the first verified entries.
 - [ ] REL-002 Add signed update-manifest design and rollback test.
-- [>] REL-003 Configure Windows signing, macOS signing/notarization, Linux packaging. The correct Windows signing order and artifact paths plus service-bearing Linux package definitions are implemented; a trusted certificate, a real Linux build artifact, and macOS remain.
+- [>] REL-003 Configure Windows signing, macOS signing/notarization, Linux packaging.
+  Windows signing tasks, native macOS preview packaging and Linux DEB CI checks
+  are implemented; trusted certificates, macOS notarization and real-host
+  acceptance remain.
 - [>] REL-004 Complete license notices for Wails, Tailscale, frontend dependencies. Direct dependencies are recorded; transitive release inventory remains.
 - [>] REL-005 Run accessibility, screenshot, integration, and clean-machine checks. Frontend accessibility/responsive checks and Windows native smoke testing are complete.
 
 ## Verification evidence
 
-- [>] 2026-09-20 Upgrade Wails Go/CLI/runtime to beta.23; review beta.20 loader
+- [x] 2026-09-20 Upgrade Wails Go/CLI/runtime to beta.23; review beta.20 loader
   removal and beta.19 macOS private API gating; rebuild Windows installer.
 
-- [>] 2026-09-20 macOS Apple Silicon/Intel independent PKG builds, native tests,
+- [x] 2026-09-20 macOS Apple Silicon/Intel independent PKG builds, native tests,
   initial install, LocalAPI permissions, restart, upgrade, GUI launch and removal.
 
 - [x] 2026-08-15 Windows native build and lifecycle smoke test.

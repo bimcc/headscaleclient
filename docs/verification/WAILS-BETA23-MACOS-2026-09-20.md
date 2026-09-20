@@ -35,11 +35,22 @@
   language tables retained. Binary build metadata confirms Wails beta.23 and
   Tailscale 1.102.2. SHA-256:
   `769258D5D6CBB1F0F51FECB52E7CF3111FF92A29EC3E45B723ED0F816D7DD9F7`.
+- Windows native startup smoke test: launched the new binary in background,
+  confirmed responsive GUI process and a WebView2 child, then stopped only the
+  test GUI. No install, account login or routing change was performed.
 - Fixed a pre-existing Linux package configuration failure observed on base
   commit e38d497: nfpm content paths require `expand: true` to interpolate
   `${GOARCH}`. This is not a regression introduced by Wails beta.23.
-- Native macOS Apple Silicon/Intel builds and install/upgrade/removal smoke
-  tests are running. Results will be recorded after the actual runs.
+- [Cross-platform CI 35497215721](https://github.com/bimcc/headscaleclient/actions/runs/35497215721)
+  passed for Windows, macOS and Ubuntu on source commit `48bf122`. This includes
+  version pins, frontend checks, Go tests/vet, desktop builds and Linux DEB
+  content checks.
+- [macOS packaging 35497215720](https://github.com/bimcc/headscaleclient/actions/runs/35497215720):
+  Apple Silicon and Intel package builds, backend/frontend tests, initial install,
+  normal-user LocalAPI read/write, stop/start, reinstall retaining state,
+  GUI process launch and service uninstall all passed on both architectures.
+  Downloaded PKG/ZIP artifacts are verified against the workflow SHA-256 files.
+  Both daemons are built with Go 1.26.5 from checksum-pinned Tailscale 1.102.2.
 
 ## Release limitations
 

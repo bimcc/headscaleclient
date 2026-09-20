@@ -331,6 +331,19 @@ The official endpoint is a built-in record. Custom endpoints default to
 provider `auto`; feature visibility is based on observed capabilities rather
 than hostname matching.
 
+## macOS managed distribution
+
+The independent macOS preview packages the public-API Wails/WKWebView app with
+an unmodified upstream `tailscaled` source build. Networking uses `utun` and a
+root launchd job, not an embedded GUI VPN implementation. A dedicated socket
+and state directory separate this service from official Tailscale installations.
+The installer rejects detected competing services; a GUI-only archive can reuse
+an existing service. Fixed root-owned helpers implement repair and removal.
+
+See [ADR 0004](../adr/0004-macos-launchd-distribution.md),
+[macOS guide](../product/MACOS.md), and
+[beta.23 migration evidence](../verification/WAILS-BETA23-MACOS-2026-09-20.md).
+
 ## Testing strategy
 
 ### Unit tests

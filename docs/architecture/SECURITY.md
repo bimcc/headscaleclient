@@ -34,6 +34,13 @@
   active HeadscaleClient installation.
 - Linux privilege escalation is limited to starting a fixed known systemd unit;
   no product-specific passwordless PolicyKit rule is installed.
+- macOS repair elevates only a fixed installed root-owned service controller.
+  Managed LocalAPI uses a dedicated Unix socket without fallback to an official
+  client's TCP endpoint. Root paths reject symlinks and group/world writes;
+  state remains root-owned with mode 0700. GUI inputs never select a command.
+- macOS payloads are source-checksummed upstream builds with post-signing file
+  hashes. Ad-hoc signatures provide no publisher identity; Developer ID signing
+  and notarization remain prerequisites for trusted distribution.
 
 ## Frontend method policy
 
