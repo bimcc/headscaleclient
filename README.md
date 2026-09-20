@@ -10,9 +10,9 @@ NAT traversal, routing, and DNS remain owned by the upstream daemon.
 
 ## Current baseline
 
-- HeadscaleClient [0.2.0](https://github.com/bimcc/headscaleclient/releases/latest) (latest stable release)
+- HeadscaleClient [0.2.1](https://github.com/bimcc/headscaleclient/releases/latest)
 
-- Wails `v3.0.0-beta.23`
+- Wails `v3.0.0-beta.20`
 - Go `1.26.5`
 - `tailscale.com` `v1.102.2`
 - React + TypeScript
@@ -20,18 +20,25 @@ NAT traversal, routing, and DNS remain owned by the upstream daemon.
   language, while portable builds default to Chinese
 - Windows, macOS, and Linux desktop
 
+Version 0.2.1 pins Wails beta.20 after the user reported that both the beta.8
+and beta.20 comparison installers no longer triggered the Windows detection
+seen with beta.23. Go and the Tailscale network service remain unchanged.
+See [release notes](docs/releases/v0.2.1.md),
+[release verification](docs/verification/RELEASE-0.2.1.md) and
+[beta.20 comparison evidence](docs/verification/WAILS-BETA20-TRIAL-2026-09-20.md).
+
 ## Development prerequisites
 
 - Go `1.26.5`
 - Node.js `24`
 - pnpm `11.21.0`
-- Wails CLI `v3.0.0-beta.23`
+- Wails CLI `v3.0.0-beta.20`
 - An existing `tailscaled` daemon for live LocalAPI development
 
 Install the pinned Wails CLI and pnpm versions with:
 
 ```sh
-go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.20
 npm install --global pnpm@11.21.0
 ```
 

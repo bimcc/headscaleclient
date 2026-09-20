@@ -283,7 +283,7 @@ func NewService(daemon Daemon, store Store, sink EventSink, options ...Option) (
 		watchStableTime:     DefaultWatchStableTime,
 		pendingLoginTTL:     DefaultPendingLoginTTL,
 		appVersion:          "dev",
-		wailsVersion:        "3.0.0-beta.23",
+		wailsVersion:        "3.0.0-beta.20",
 		localAPI:            "tailscaled LocalAPI",
 		platform:            runtime.GOOS + "/" + runtime.GOARCH,
 		now:                 time.Now,

@@ -24,6 +24,19 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [x] REP-005 Add baseline CI matrix for Windows, macOS, and Linux.
 - [x] REP-006 Upgrade Wails Go module, CLI, runtime and diagnostics to beta.23;
   preserve installer customizations and verify all three desktop build targets.
+- [x] REP-007 Restore Wails Go/CLI/frontend runtime to beta.8 at the user's
+  request, retain current application features, and build a separate Windows
+  rollback installer. Windows build and automated checks passed; see
+  [verification](verification/WAILS-BETA8-ROLLBACK-2026-09-20.md).
+- [x] REP-008 User retested the beta.8 rollback installer and reported that the
+  detection no longer occurs. Native Mac/Linux acceptance remains pending
+  before distributing new packages for those platforms.
+- [x] REP-009 At the user's request, test Wails Go/CLI/runtime beta.20 and build
+  a separate Windows comparison installer, preserving the accepted beta.8
+  package. Automated checks and package verification passed; see
+  [verification](verification/WAILS-BETA20-TRIAL-2026-09-20.md).
+- [x] REP-010 User reported the beta.20 comparison installer also passed and
+  requested a new GitHub release using beta.20.
 
 ## Domain and application backend
 
@@ -166,6 +179,10 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
   during install, and validate the final Windows service start result.
 
 ## Release readiness
+
+- [>] REL-007 Release 0.2.1 with Wails beta.20 after user acceptance; synchronize
+  product versions, verify Windows and native Mac/Linux packages, publish a new
+  stable GitHub release with checksums, and retain the 0.2.0 release history.
 
 - [x] REL-006 Release 0.2.0: synchronized product/package versions, rebuilt
   Windows and native Mac/Linux artifacts, validated and published four installers

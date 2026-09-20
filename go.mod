@@ -3,7 +3,7 @@ module github.com/headscaleclient/headscaleclient
 go 1.26.5
 
 require (
-	github.com/wailsapp/wails/v3 v3.0.0-beta.23
+	github.com/wailsapp/wails/v3 v3.0.0-beta.20
 	golang.org/x/image v0.41.0
 	golang.org/x/sys v0.47.0
 	tailscale.com v1.102.2

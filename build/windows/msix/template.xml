@@ -17,7 +17,7 @@
         PackageDisplayName="HeadscaleClient"
         PublisherName="CN=HeadscaleClient Contributors"
         PublisherDisplayName="HeadscaleClient Contributors"
-        Version="0.2.0.0"
+        Version="0.2.1.0"
         PackageDescription="Cross-platform client for Tailscale-compatible networks">
         <Capabilities>
             <Capability Name="runFullTrust" />

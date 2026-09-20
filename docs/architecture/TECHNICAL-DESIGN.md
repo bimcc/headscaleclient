@@ -4,7 +4,7 @@
 
 | Component | Version | Policy |
 | --- | --- | --- |
-| Wails | `v3.0.0-beta.23` | Exact pin while v3 is beta |
+| Wails | `v3.0.0-beta.20` | Exact pin for 0.2.1 after user acceptance |
 | Go | `1.26.5` | Match the selected Tailscale module |
 | Tailscale module | `v1.102.2` | Upgrade only in a dedicated compatibility change |
 | Frontend | React + TypeScript + Vite | Strict TypeScript |
@@ -94,7 +94,7 @@ relay badge in the WebView or tray.
 ## Desktop quick surfaces
 
 The main WebView is the detailed management surface. A native Wails
-`SystemTray` menu is the quick interaction surface. `v3.0.0-beta.23` provides
+`SystemTray` menu is the quick interaction surface. `v3.0.0-beta.20` provides
 runtime menu replacement, submenus, radio items, checkboxes, tray click
 handlers, and window show/hide APIs on the supported desktop platforms.
 
@@ -333,7 +333,7 @@ than hostname matching.
 
 ## macOS managed distribution
 
-The independent macOS preview packages the public-API Wails/WKWebView app with
+The independent macOS edition packages the Wails/WKWebView app with
 an unmodified upstream `tailscaled` source build. Networking uses `utun` and a
 root launchd job, not an embedded GUI VPN implementation. A dedicated socket
 and state directory separate this service from official Tailscale installations.
@@ -345,6 +345,11 @@ and removal. See [ADR 0005](../adr/0005-macos-unified-installer.md).
 See [ADR 0004](../adr/0004-macos-launchd-distribution.md),
 [macOS guide](../product/MACOS.md), and
 [beta.23 migration evidence](../verification/WAILS-BETA23-MACOS-2026-09-20.md).
+Those native results describe the published beta.23 packages. The beta.8
+fallback follows [ADR 0006](../adr/0006-wails-beta8-rollback.md). The accepted
+[beta.20 comparison](../verification/WAILS-BETA20-TRIAL-2026-09-20.md) is the
+0.2.1 framework baseline. Fresh platform checks for that release are recorded
+in [0.2.1 verification](../verification/RELEASE-0.2.1.md).
 
 ## Testing strategy
 
