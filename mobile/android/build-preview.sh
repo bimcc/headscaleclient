@@ -16,6 +16,10 @@ upstream_dir="$(go list -m -f '{{.Dir}}' github.com/tailscale/tailscale-android)
 cp "$upstream_dir/LICENSE" android/app/src/main/assets/licenses/TAILSCALE-ANDROID-LICENSE.txt
 tailscale_dir="$(go list -m -f '{{.Dir}}' tailscale.com)"
 cp "$tailscale_dir/LICENSE" android/app/src/main/assets/licenses/TAILSCALE-LICENSE.txt
+mobile_dir="$(go list -m -f '{{.Dir}}' golang.org/x/mobile)"
+cp "$mobile_dir/LICENSE" android/app/src/main/assets/licenses/GO-MOBILE-LICENSE.txt
+wireguard_dir="$(go list -m -f '{{.Dir}}' github.com/tailscale/wireguard-go)"
+cp "$wireguard_dir/LICENSE" android/app/src/main/assets/licenses/WIREGUARD-GO-LICENSE.txt
 gradle -p android --no-daemon assembleDebug lintDebug
 mkdir -p ../bin/android-preview
 cp android/app/build/outputs/apk/debug/app-debug.apk ../bin/android-preview/headscaleclient-0.2.1-android.1.apk

@@ -62,7 +62,8 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
                     respond(reply, id, opened ? "{\"result\":null}" : error(getString(R.string.browser_failed))); return;
                 }
                 boolean wasDesired = app.desired();
-                Runnable execute = () -> app.worker.execute(() -> {
+                java.util.concurrent.ExecutorService executor = Set.of("BeginLogin", "SwitchProfile", "SetConnection", "Logout").contains(method) ? app.vpnWorker : app.worker;
+                Runnable execute = () -> executor.execute(() -> {
                     try {
                         String response = app.awaitClient().request(method, args.toString());
                         boolean ok = !new JSONObject(response).has("error");

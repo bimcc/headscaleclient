@@ -1,14 +1,20 @@
 package com.bimcc.headscaleclient;
 
-import android.app.*;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
-import android.net.*;
+import android.net.IpPrefix;
+import android.net.VpnService;
 import android.os.Build;
 import android.system.OsConstants;
 import java.net.InetAddress;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import libtailscale.*;
+import libtailscale.IPNService;
+import libtailscale.Libtailscale;
+import libtailscale.VPNServiceBuilder;
 
 public final class TunnelService extends VpnService implements IPNService {
     static final String DISCONNECT = "com.bimcc.headscaleclient.DISCONNECT";
@@ -82,7 +88,10 @@ public final class TunnelService extends VpnService implements IPNService {
         String owner = app.activeVPN.get();
         if (owner != null && !instanceId.equals(owner)) { close(); return; }
         app.setDesired(false);
-        app.worker.execute(() -> {
+        app.vpnWorker.execute(() -> {
+            if (app.desired()) return;
+            String current = app.activeVPN.get();
+            if (current != null && !instanceId.equals(current)) return;
             try { app.awaitClient().setVPNState(false, false); app.awaitClient().request("SetConnection", "[false]"); }
             catch (Exception ignored) {}
         });

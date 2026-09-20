@@ -18,6 +18,9 @@ func Call(service *application.Service, method, arguments string) (any, error) {
 	if err := json.Unmarshal([]byte(arguments), &args); err != nil {
 		return nil, err
 	}
+	if args == nil {
+		return nil, errors.New("argument array required")
+	}
 	counts := map[string]int{"GetSnapshot": 0, "EnsureDaemon": 0, "SetConnection": 1,
 		"SetPreference": 2, "SetExitNode": 1, "PingDevice": 1, "SaveEndpoint": 1,
 		"DeleteEndpoint": 1, "SwitchProfile": 1, "Logout": 0, "BeginLogin": 1,
@@ -28,6 +31,9 @@ func Call(service *application.Service, method, arguments string) (any, error) {
 	}
 	if len(args) != n {
 		return nil, errors.New("invalid argument count")
+	}
+	if n > 0 && method != "SetExitNode" && string(args[0]) == "null" {
+		return nil, errors.New("argument cannot be null")
 	}
 	var str string
 	var enabled bool
