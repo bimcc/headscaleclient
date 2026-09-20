@@ -59,7 +59,9 @@ jobs:
           go mod download
           go mod verify
       - name: Build unified installer
-        run: go tool wails3 task darwin:package:installer ARCH=${{ matrix.arch }}
+        run: |
+          node --test tools/build/test-macos-installer.mjs
+          go tool wails3 task darwin:package:installer ARCH=${{ matrix.arch }}
       - name: Verify backend
         run: |
           go test ./...

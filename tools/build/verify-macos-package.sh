@@ -142,3 +142,21 @@ test "$(cat "$service_root/installation-mode")" = managed
 sudo test -f "$service_root/state/upgrade-check"
 sudo /bin/sh "$service_root/uninstall-service"
 echo 'Unified installer: stopped official fixture, live/stopped external daemon, conflict protection, unchanged external prefs/process/payload, removal and explicit migration passed.'
+
+# Upgrade from the previously published split-package edition (immutable hashes).
+case "$arch" in
+  arm64) previous_sha=aeedc347da3829856b6b7a629285fedad5422d14638c59c8ff62e035ec804191 ;;
+  amd64) previous_sha=9f71d0e3a4523a2b031f829ca043ce276d84e8f42d865ed2d893413c853ed496 ;;
+esac
+previous="$PWD/bin/previous-macos-$arch.pkg"
+curl --fail --location --retry 2 --max-time 120 \
+  "https://github.com/bimcc/headscaleclient/releases/download/v0.1.0-preview.20260920/headscaleclient-macos-$arch-installer.pkg" -o "$previous"
+test "$(shasum -a 256 "$previous" | awk '{print $1}')" = "$previous_sha"
+sudo installer -pkg "$previous" -target /
+sudo test -f "$service_root/state/upgrade-check"
+sudo installer -pkg "$pkg" -target /
+test "$(cat "$service_root/installation-mode")" = managed
+sudo test -f "$service_root/state/upgrade-check"
+"$cli" --socket="$socket" status --json >/dev/null
+sudo /bin/sh "$service_root/uninstall-service"
+echo 'Upgrade from the published split-package preview passed with state preserved.'
