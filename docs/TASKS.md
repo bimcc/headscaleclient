@@ -167,6 +167,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 
 ## Release readiness
 
+- [>] REL-006 Release 0.2.0: synchronize product/package versions, rebuild
+  Windows and native Mac/Linux artifacts, validate and publish to GitHub.
+
 - [>] REL-001 Establish supported daemon compatibility matrix. `tailscaled 1.102.2` and Headscale `v0.29.3` are the first verified entries.
 - [ ] REL-002 Add signed update-manifest design and rollback test.
 - [>] REL-003 Configure Windows signing, macOS signing/notarization, Linux packaging.

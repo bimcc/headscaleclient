@@ -83,6 +83,9 @@ jobs:
       - name: Download Go modules
         run: go mod download
 
+      - name: Verify application version consistency
+        run: node tools/build/check-version.mjs
+
       - name: Verify pinned toolchain and Go modules
         run: |
           $ErrorActionPreference = "Stop"
@@ -139,6 +142,11 @@ jobs:
           if ($null -eq $package) {
             throw "The Linux DEB package was not generated."
           }
+          $expectedVersion = (Get-Content VERSION -Raw).Trim()
+          $packageVersion = (dpkg-deb --field $package.FullName Version).Trim()
+          if ($packageVersion -ne "$expectedVersion-1") {
+            throw "Unexpected DEB version: $packageVersion"
+          }
           $contents = dpkg-deb --contents $package.FullName | Out-String
           @(
             'usr/bin/headscaleclient',
@@ -150,3 +158,12 @@ jobs:
               throw "The Linux package is missing $_."
             }
           }
+
+      - name: Upload verified Linux DEB
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: headscaleclient-linux-amd64
+          if-no-files-found: error
+          path: bin/*.deb
+          retention-days: 30

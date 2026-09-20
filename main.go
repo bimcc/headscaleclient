@@ -23,7 +23,7 @@ import (
 
 const (
 	appName    = "HeadscaleClient"
-	appVersion = "0.1.0"
+	appVersion = "0.2.0"
 )
 
 //go:embed all:frontend/dist

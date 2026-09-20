@@ -6,7 +6,7 @@
 name: "headscaleclient"
 arch: ${GOARCH}
 platform: "linux"
-version: "0.1.0"
+version: "0.2.0"
 section: "default"
 priority: "extra"
 maintainer: "HeadscaleClient Contributors <headscaleclient@users.noreply.github.com>"

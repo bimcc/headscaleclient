@@ -40,6 +40,7 @@ tasks:
   check:
     summary: Runs backend and frontend verification
     cmds:
+      - node tools/build/check-version.mjs
       - go test ./internal/...
       - task: common:frontend:run
         vars:

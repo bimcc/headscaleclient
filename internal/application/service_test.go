@@ -27,7 +27,7 @@ func TestGetSnapshotReturnsConfiguredOfflineState(t *testing.T) {
 	clock := time.Date(2026, 8, 15, 4, 5, 6, 0, time.UTC)
 	service := mustService(t, daemon, store, nil,
 		WithClock(func() time.Time { return clock }),
-		WithDiagnostics("0.1.0", "3.0.0-beta.23", "localapi", "test/amd64"),
+		WithDiagnostics("0.2.0", "3.0.0-beta.23", "localapi", "test/amd64"),
 	)
 
 	snapshot, err := service.GetSnapshot()
@@ -49,7 +49,7 @@ func TestGetSnapshotReturnsConfiguredOfflineState(t *testing.T) {
 	if !snapshot.Settings.LaunchAtLogin || snapshot.Settings.Theme != domain.ThemeSystem {
 		t.Fatalf("stored settings were not merged: %+v", snapshot.Settings)
 	}
-	if snapshot.Diagnostics.AppVersion != "0.1.0" || snapshot.Diagnostics.Platform != "test/amd64" {
+	if snapshot.Diagnostics.AppVersion != "0.2.0" || snapshot.Diagnostics.Platform != "test/amd64" {
 		t.Fatalf("diagnostics were not merged: %+v", snapshot.Diagnostics)
 	}
 	if snapshot.UpdatedAt != "2026-08-15T04:05:06Z" {

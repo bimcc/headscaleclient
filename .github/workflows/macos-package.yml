@@ -15,6 +15,9 @@ on:
       - 'go.mod'
       - 'go.sum'
       - 'build/daemon/manifest.json'
+      - 'VERSION'
+      - 'build/config.yml'
+      - 'tools/build/check-version.mjs'
 
 permissions:
   contents: read
@@ -60,6 +63,7 @@ jobs:
           go mod verify
       - name: Build unified installer
         run: |
+          node tools/build/check-version.mjs
           node --test tools/build/test-macos-installer.mjs
           go tool wails3 task darwin:package:installer ARCH=${{ matrix.arch }}
       - name: Verify backend

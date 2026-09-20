@@ -178,7 +178,7 @@ const demoSnapshot: AppSnapshot = {
     language: "zh-CN",
   },
   diagnostics: {
-    appVersion: "0.1.0-dev",
+    appVersion: "0.2.0-dev",
     wailsVersion: "3.0.0-beta.23",
     daemonVersion: "未连接",
     localApi: "不可用",

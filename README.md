@@ -10,6 +10,8 @@ NAT traversal, routing, and DNS remain owned by the upstream daemon.
 
 ## Current baseline
 
+- HeadscaleClient `0.2.0` (preview release)
+
 - Wails `v3.0.0-beta.23`
 - Go `1.26.5`
 - `tailscale.com` `v1.102.2`
@@ -86,6 +88,9 @@ go vet ./...
 
 The CI workflow runs these checks on Windows, macOS, and Ubuntu and also
 asserts the pinned Wails and `tailscale.com` module versions.
+Run `node tools/build/check-version.mjs` to verify all product and packaging
+version metadata against `VERSION` before release. Update those fields together;
+do not regenerate customized installers from a generic Wails template.
 
 ## Build
 

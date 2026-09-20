@@ -9,6 +9,12 @@ service_root='/Library/Application Support/BIMCC/HeadscaleClient'
 socket='/var/run/headscaleclient-tailscaled.socket'
 cli="$service_root/daemon/tailscale"
 plist=/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist
+release_version=$(node -p 'require("./frontend/package.json").version')
+verify_installed_version() {
+  test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /Applications/HeadscaleClient.app/Contents/Info.plist)" = "$release_version"
+  cmp bin/headscaleclient /Applications/HeadscaleClient.app/Contents/MacOS/headscaleclient
+  test "$(pkgutil --pkg-info io.headscaleclient.desktop.pkg | awk '/^version:/ {print $2}')" = "$release_version"
+}
 
 # Keep failures actionable on the disposable runner without leaking real state.
 diagnose() {
@@ -25,6 +31,7 @@ sudo installer -showChoicesXML -pkg "$pkg" -target / > bin/macos-installer-choic
 plutil -lint bin/macos-installer-choices.xml
 sudo installer -pkg "$pkg" -target /
 test "$(cat "$service_root/installation-mode")" = managed
+verify_installed_version
 sudo "$cli" --socket="$socket" status --json | tee bin/macos-initial-status.json
 node -e 'const s=JSON.parse(require("fs").readFileSync("bin/macos-initial-status.json")); if(s.BackendState!=="NeedsLogin") throw Error("unexpected fresh state: "+s.BackendState)'
 sudo /bin/sh "$service_root/service-control" stop
@@ -155,6 +162,7 @@ test "$(shasum -a 256 "$previous" | awk '{print $1}')" = "$previous_sha"
 sudo installer -pkg "$previous" -target /
 sudo test -f "$service_root/state/upgrade-check"
 sudo installer -pkg "$pkg" -target /
+verify_installed_version
 test "$(cat "$service_root/installation-mode")" = managed
 sudo test -f "$service_root/state/upgrade-check"
 "$cli" --socket="$socket" status --json >/dev/null
