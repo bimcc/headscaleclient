@@ -169,7 +169,8 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 
 - [x] REL-006 Release 0.2.0: synchronized product/package versions, rebuilt
   Windows and native Mac/Linux artifacts, validated and published four installers
-  plus SHA256SUMS to GitHub as a prerelease. Remote digests matched; see
+  plus SHA256SUMS to GitHub, then promoted to stable/latest after user acceptance.
+  Original packages and checksums retained; remote digests matched. See
   [release verification](verification/RELEASE-0.2.0.md) for evidence and limits.
 
 - [>] REL-001 Establish supported daemon compatibility matrix. `tailscaled 1.102.2` and Headscale `v0.29.3` are the first verified entries.

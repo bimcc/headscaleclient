@@ -1,6 +1,7 @@
 # Release 0.2.0 verification
 
-Status: published and verified on 2026-09-20. GitHub release channel: prerelease.
+Status: published and verified on 2026-09-20; promoted to stable/latest after
+user acceptance. GitHub release channel: stable.
 
 [Download HeadscaleClient v0.2.0](https://github.com/bimcc/headscaleclient/releases/tag/v0.2.0).
 
@@ -30,6 +31,10 @@ this does not constitute a mobile release or mobile build validation.
 
 ## Completed checks
 
+- User acceptance: the user reported testing without problems and explicitly
+  approved the v0.2.0 stable release. Specific platforms and scenarios were not
+  enumerated; this does not expand the automated verification scope below.
+  Promotion reuses the tested packages, tag and checksums without rebuilding.
 - [Cross-platform CI](https://github.com/bimcc/headscaleclient/actions/runs/35500703917):
   successful on Windows, macOS and Ubuntu 24.04. Each ran metadata consistency,
   module verification, 65 frontend tests, frontend build, Go test/vet and the
@@ -74,8 +79,9 @@ The release also includes `SHA256SUMS.txt` covering all four packages.
 Its SHA-256 is `96fa322a85987609841119552591403597ab04a7477240c8272782f36d4cfbfb`.
 After publication, all five assets reported `uploaded`; their exact byte sizes
 and GitHub SHA-256 digests matched the local files. The release tag points to
-the tested source commit above. The existing v0.1.0 stable/latest release was
-retained; v0.2.0 is explicitly a prerelease.
+the tested source commit above. After user acceptance, v0.2.0 was promoted from
+prerelease to stable and selected as latest. v0.1.0 remains available as an older
+release. All five assets retain their original sizes and SHA-256 digests.
 
 ## Limits
 
