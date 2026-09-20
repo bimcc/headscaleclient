@@ -17,7 +17,7 @@ tasks:
       ARCH: '{{.ARCH | default ARCH}}'
 
   package:installer:
-    summary: Creates the independent macOS PKG and a GUI-only ZIP
+    summary: Creates one macOS PKG that installs or reuses the network service
     platforms: [darwin]
     cmds:
       - task: package

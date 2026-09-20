@@ -178,6 +178,9 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 
 ## Verification evidence
 
+- [>] 2026-09-20 Unified macOS PKG, install-time service reuse notices,
+  external-unavailable guidance and native dual-architecture lifecycle tests.
+
 - [x] 2026-09-20 Upgrade Wails Go/CLI/runtime to beta.23; review beta.20 loader
   removal and beta.19 macOS private API gating; rebuild Windows installer.
 

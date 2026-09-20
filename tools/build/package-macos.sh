@@ -16,28 +16,27 @@ codesign --verify --deep --strict "$app"
 stage=$(mktemp -d "$root/.task/macos-package.XXXXXX")
 trap 'rm -rf "$stage"' EXIT
 install_root="$stage/root/Library/Application Support/BIMCC/HeadscaleClient"
-mkdir -p "$stage/root/Applications" "$install_root/daemon/licenses" "$stage/root/Library/LaunchDaemons" "$stage/scripts"
+mkdir -p "$stage/root/Applications" "$install_root/daemon/licenses" "$stage/scripts"
 ditto "$app" "$stage/root/Applications/HeadscaleClient.app"
 cp "$payload/tailscale" "$payload/tailscaled" "$payload/provenance.json" "$install_root/daemon/"
 cp "$payload/licenses/TAILSCALE-LICENSE.txt" "$install_root/daemon/licenses/"
-cp build/darwin/service/service-control build/darwin/service/uninstall-service "$install_root/"
-cp build/darwin/service/io.headscaleclient.tailscaled.plist "$stage/root/Library/LaunchDaemons/"
+cp build/darwin/service/service-control build/darwin/service/service-policy build/darwin/service/uninstall-service "$install_root/"
+# Do not ship an active LaunchDaemon in the payload: postinstall decides ownership.
+cp build/darwin/service/io.headscaleclient.tailscaled.plist "$install_root/launchd-template.plist"
 cp build/darwin/installer/preinstall build/darwin/installer/postinstall "$stage/scripts/"
+cp build/darwin/service/service-policy "$stage/scripts/"
 cp THIRD_PARTY_NOTICES.md LICENSE "$install_root/"
-chmod 755 "$stage/scripts/"* "$install_root/service-control" "$install_root/uninstall-service" "$install_root/daemon/tailscale" "$install_root/daemon/tailscaled"
-chmod 644 "$stage/root/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist"
-plutil -lint "$stage/root/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist"
+chmod 755 "$stage/scripts/"* "$install_root/service-control" "$install_root/service-policy" "$install_root/uninstall-service" "$install_root/daemon/tailscale" "$install_root/daemon/tailscaled"
+chmod 644 "$install_root/launchd-template.plist"
+plutil -lint "$install_root/launchd-template.plist"
 # A fixed install location prevents Installer from updating an unrelated copied app.
 pkgbuild --analyze --root "$stage/root" "$stage/components.plist"
 /usr/libexec/PlistBuddy -c 'Set :0:BundleIsRelocatable false' "$stage/components.plist"
 pkgbuild --root "$stage/root" --identifier io.headscaleclient.desktop.pkg --version "$version" \
   --install-location / --ownership recommended --scripts "$stage/scripts" \
   --component-plist "$stage/components.plist" "$stage/component.pkg"
-productbuild --synthesize --package "$stage/component.pkg" "$stage/distribution.xml"
-# A package must not install an arm64 daemon on Intel or vice versa.
-sed -E -i '' -e 's/ hostArchitectures="[^"]*"//g' \
-  -e "s/<options /<options hostArchitectures=\"$machine_arch\" /" "$stage/distribution.xml"
-productbuild --distribution "$stage/distribution.xml" --package-path "$stage" \
+sed -e "s/@ARCH@/$machine_arch/g" -e "s/@VERSION@/$version/g" \
+  build/darwin/installer/Distribution.xml > "$stage/distribution.xml"
+productbuild --distribution "$stage/distribution.xml" --package-path "$stage" --resources build/darwin/installer \
   "$root/bin/headscaleclient-macos-$arch-installer.pkg"
-ditto -c -k --keepParent "$app" "$root/bin/headscaleclient-macos-$arch-gui-only.zip"
-(cd bin && shasum -a 256 "headscaleclient-macos-$arch-installer.pkg" "headscaleclient-macos-$arch-gui-only.zip" > "headscaleclient-macos-$arch-SHA256SUMS.txt")
+(cd bin && shasum -a 256 "headscaleclient-macos-$arch-installer.pkg" > "headscaleclient-macos-$arch-SHA256SUMS.txt")

@@ -58,7 +58,7 @@ jobs:
           test "$(go env GOARCH)" = '${{ matrix.arch }}'
           go mod download
           go mod verify
-      - name: Build independent installer and GUI-only archive
+      - name: Build unified installer
         run: go tool wails3 task darwin:package:installer ARCH=${{ matrix.arch }}
       - name: Verify backend
         run: |
@@ -76,7 +76,6 @@ jobs:
           if-no-files-found: error
           path: |
             bin/headscaleclient-macos-${{ matrix.arch }}-installer.pkg
-            bin/headscaleclient-macos-${{ matrix.arch }}-gui-only.zip
             bin/headscaleclient-macos-${{ matrix.arch }}-SHA256SUMS.txt
             bin/daemon/darwin-${{ matrix.arch }}/provenance.json
           retention-days: 30

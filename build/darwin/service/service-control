@@ -27,18 +27,11 @@ trusted "$service_root/daemon/tailscale"
 [ "$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' "$plist")" = "$service_root/daemon/tailscaled" ] || fail 'Unexpected service executable.'
 
 check_conflicts() {
-  [ ! -d /Applications/Tailscale.app ] || fail '检测到 Tailscale.app。请使用 GUI-only 版，或先卸载官方客户端。 Tailscale.app is installed; use the GUI-only build or uninstall it first.'
-  for other in /Library/LaunchDaemons/com.tailscale.tailscaled.plist /Library/LaunchDaemons/homebrew.mxcl.tailscale.plist /Library/LaunchDaemons/homebrew.mxcl.tailscaled.plist; do
-    [ ! -e "$other" ] || fail "Existing Tailscale service: $other. Use the GUI-only build."
-  done
-  # Also catch manually launched daemons and GUI network extensions.
-  for process in $(pgrep -x tailscaled || true); do
-    command=$(ps -p "$process" -o command=)
-    case "$command" in "$service_root/daemon/tailscaled"*) ;; *) fail '另一套 Tailscale 正在运行。 Another Tailscale daemon is running.' ;; esac
-  done
-  if pgrep -f 'Tailscale[.]app/Contents/|io[.]tailscale[.]ipn[.](macsys|network-extension)' >/dev/null; then
-    fail '请先退出其他 Tailscale 客户端。 Quit the other Tailscale client before starting this service.'
-  fi
+  trusted "$service_root/service-policy"
+  case "$(/bin/sh "$service_root/service-policy")" in
+    managed) ;;
+    *) fail '检测到外部 Tailscale 或服务归属异常。请先处理冲突，再重试；不会启动第二套服务。 Resolve the external/managed service conflict first; no second service will be started.' ;;
+  esac
 }
 
 case "${1:-}" in

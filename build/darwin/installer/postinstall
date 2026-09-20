@@ -1,3 +1,23 @@
 #!/bin/sh
 set -eu
-/bin/sh '/Library/Application Support/BIMCC/HeadscaleClient/service-control' start
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+service_root='/Library/Application Support/BIMCC/HeadscaleClient'
+plist='/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist'
+# Recheck after copying payload. Never rely solely on Installer's advisory UI.
+mode=$(/bin/sh "$service_root/service-policy")
+case "$mode" in
+  external)
+    printf '%s\n' external > "$service_root/installation-mode"
+    chmod 644 "$service_root/installation-mode"
+    printf '%s\n' '已安装客户端，将复用外部 Tailscale 服务（未更改）。若原服务未启动或不兼容，请在客户端设置中查看提示。' \
+      'Client installed. The external Tailscale service was left unchanged. Start it and check compatibility in client Settings. Bundled binaries are inactive.'
+    ;;
+  managed|missing)
+    install -o root -g wheel -m 644 "$service_root/launchd-template.plist" "$plist"
+    printf '%s\n' managed > "$service_root/installation-mode"
+    chmod 644 "$service_root/installation-mode"
+    /bin/sh "$service_root/service-control" start
+    ;;
+  *) printf '%s\n' '检测到服务冲突，未启动第二套网络服务。 Resolve the service conflict before starting networking.' >&2; exit 1 ;;
+esac

@@ -38,10 +38,10 @@ func (m *platformManager) Inspect(ctx context.Context) (domain.EngineStatus, err
 	}
 	_, err := os.Lstat(macos.LaunchDaemonPath)
 	if os.IsNotExist(err) {
-		// GUI-only builds can reuse upstream's macOS socket/TCP discovery.
+		// Unified installs without a managed registration reuse upstream discovery.
 		if _, queryErr := (&local.Client{}).Status(ctx); queryErr == nil {
 			status.Ownership, status.Service = domain.EngineOwnershipExternal, domain.EngineServiceRunning
-		} else if _, appErr := os.Stat("/Applications/Tailscale.app"); appErr == nil {
+		} else if darwinExternalInstalled(os.ReadFile, os.Stat) {
 			status.Ownership, status.Service = domain.EngineOwnershipExternal, domain.EngineServiceStopped
 		}
 		return status, nil
@@ -62,6 +62,23 @@ func (m *platformManager) Inspect(ctx context.Context) (domain.EngineStatus, err
 	status.Service = darwinServiceState(string(output), printErr)
 	status.CanStart = status.Service == domain.EngineServiceStopped
 	return status, nil
+}
+
+func darwinExternalInstalled(readFile func(string) ([]byte, error), stat func(string) (os.FileInfo, error)) bool {
+	if data, err := readFile(macos.InstallModePath); err == nil && strings.TrimSpace(string(data)) == "external" {
+		return true
+	}
+	for _, path := range []string{
+		"/Applications/Tailscale.app",
+		"/Library/LaunchDaemons/com.tailscale.tailscaled.plist",
+		"/Library/LaunchDaemons/homebrew.mxcl.tailscale.plist",
+		"/Library/LaunchDaemons/homebrew.mxcl.tailscaled.plist",
+	} {
+		if _, err := stat(path); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *platformManager) EnsureInstalled(ctx context.Context) error {

@@ -52,9 +52,9 @@ installer and Linux DEB/RPM/Arch packages include and manage the verified
 upstream service when one is not already installed. The GUI-only Linux AppImage
 continues to require an external daemon.
 
-The macOS preview adds independent Apple Silicon and Intel PKG installers with
-a launchd-managed `tailscaled` service. A GUI-only ZIP reuses an existing
-compatible Tailscale service. See [macOS installation and limits](docs/product/MACOS.md).
+The macOS preview provides one PKG per CPU (Apple Silicon / Intel). It reuses an
+existing Tailscale service unchanged or installs a launchd-managed service when
+none exists. See [macOS installation and limits](docs/product/MACOS.md).
 
 ## Development
 
@@ -145,7 +145,7 @@ go tool wails3 task darwin:package:installer ARCH=arm64
 ```
 
 The `macOS packages` workflow builds both CPU variants on Macs and produces
-`bin/headscaleclient-macos-<arch>-installer.pkg`, a GUI-only ZIP, SHA-256 sums
+`bin/headscaleclient-macos-<arch>-installer.pkg`, SHA-256 sums
 and daemon provenance. The preview is ad-hoc signed and not notarized.
 
 ## Repository layout

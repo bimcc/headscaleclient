@@ -7,5 +7,6 @@ const (
 	LaunchDaemonPath = "/Library/LaunchDaemons/" + ServiceLabel + ".plist"
 	DaemonPath       = ServiceRoot + "/daemon/tailscaled"
 	ControlPath      = ServiceRoot + "/service-control"
+	InstallModePath  = ServiceRoot + "/installation-mode"
 	SocketPath       = "/var/run/headscaleclient-tailscaled.socket"
 )

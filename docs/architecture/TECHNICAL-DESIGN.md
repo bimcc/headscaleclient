@@ -337,8 +337,10 @@ The independent macOS preview packages the public-API Wails/WKWebView app with
 an unmodified upstream `tailscaled` source build. Networking uses `utun` and a
 root launchd job, not an embedded GUI VPN implementation. A dedicated socket
 and state directory separate this service from official Tailscale installations.
-The installer rejects detected competing services; a GUI-only archive can reuse
-an existing service. Fixed root-owned helpers implement repair and removal.
+One PKG reuses an external service without registering a second daemon, or
+installs/updates its owned service. It rejects simultaneous managed/external
+installations before changing either. Fixed root-owned helpers implement repair
+and removal. See [ADR 0005](../adr/0005-macos-unified-installer.md).
 
 See [ADR 0004](../adr/0004-macos-launchd-distribution.md),
 [macOS guide](../product/MACOS.md), and

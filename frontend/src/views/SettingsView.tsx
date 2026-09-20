@@ -118,10 +118,16 @@ export function SettingsView({
           <div><dt>LocalAPI</dt><dd>{diagnostics.localApi}</dd></div>
           <div><dt>{t("settings.platform")}</dt><dd>{diagnostics.platform}</dd></div>
         </dl>
+        {engine.ownership === "external" && diagnostics.platform.startsWith("darwin") && (
+          <p className="muted">{t("settings.macExternalHint")}</p>
+        )}
         {runtime.daemon !== "ready" && (
           <div className="inline-health-warning">
             <ShieldAlert aria-hidden="true" size={19} />
-            <span>{engine.canInstall ? t("settings.installHint") : t("settings.repairHint")}</span>
+            <span>{engine.ownership === "external" && diagnostics.platform.startsWith("darwin")
+              ? t(runtime.daemon === "unauthorized" ? "settings.macExternalUnauthorized"
+                : runtime.daemon === "incompatible" ? "settings.macExternalIncompatible" : "settings.macExternalUnavailable")
+              : engine.canInstall ? t("settings.installHint") : t("settings.repairHint")}</span>
             {canEnsureDaemon && (
               <button className="button secondary with-icon" type="button" disabled={busy === "daemon"} onClick={onEnsureDaemon}>
                 <Wrench aria-hidden="true" size={16} />

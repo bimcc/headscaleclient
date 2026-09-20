@@ -1,0 +1,43 @@
+#!/bin/sh
+# Read-only detection. Never starts, stops, or executes an external binary.
+set -eu
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+service_root='/Library/Application Support/BIMCC/HeadscaleClient'
+managed=false
+external=false
+if [ -e /Library/LaunchDaemons/io.headscaleclient.tailscaled.plist ] || launchctl print system/io.headscaleclient.tailscaled >/dev/null 2>&1; then
+  managed=true
+fi
+for candidate in /Applications/Tailscale.app \
+  /Library/LaunchDaemons/com.tailscale.tailscaled.plist \
+  /Library/LaunchDaemons/homebrew.mxcl.tailscale.plist \
+  /Library/LaunchDaemons/homebrew.mxcl.tailscaled.plist \
+  /Library/LaunchAgents/homebrew.mxcl.tailscale.plist \
+  /Users/*/Applications/Tailscale.app \
+  /Users/*/Library/LaunchAgents/homebrew.mxcl.tailscale.plist \
+  /Users/*/Library/LaunchAgents/homebrew.mxcl.tailscaled.plist; do
+  if [ -e "$candidate" ] || [ -L "$candidate" ]; then external=true; fi
+done
+for process in $(pgrep -x tailscaled || true); do
+  command=$(ps -p "$process" -o command= 2>/dev/null || true)
+  case "$command" in
+    "$service_root/daemon/tailscaled"|"$service_root/daemon/tailscaled "*) ;;
+    '') ;;
+    *) external=true ;;
+  esac
+done
+if pgrep -f 'Tailscale[.]app/Contents/|io[.]tailscale[.]ipn[.](macsys|network-extension)' >/dev/null; then
+  external=true
+fi
+# A custom/stopped socket is treated conservatively; never silently take over.
+if [ -S /var/run/tailscaled.socket ]; then external=true; fi
+if [ "$external" = true ] && [ "$managed" = true ]; then
+  echo conflict
+elif [ "$external" = true ]; then
+  echo external
+elif [ "$managed" = true ]; then
+  echo managed
+else
+  echo missing
+fi

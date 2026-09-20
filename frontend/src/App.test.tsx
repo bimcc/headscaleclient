@@ -5,6 +5,27 @@ import { App } from "./App";
 import { createBackend, createDemoSnapshot } from "./lib/backend";
 
 describe("HeadscaleClient shell", () => {
+  it.each([
+    ["stopped", /请先打开原 Tailscale 应用/],
+    ["unauthorized", /现有 Tailscale 服务拒绝了访问/],
+    ["incompatible", /现有 Tailscale 服务与所需本地接口不兼容/],
+  ] as const)("explains unavailable reused macOS services (%s) without offering replacement", async (daemon, hint) => {
+    const user = userEvent.setup();
+    const backend = createBackend();
+    const snapshot = createDemoSnapshot();
+    snapshot.diagnostics.platform = "darwin/arm64";
+    snapshot.runtime.daemon = daemon;
+    snapshot.engine = { ...snapshot.engine, ownership: "external", service: "stopped", canInstall: false, canStart: false, payloadAvailable: false };
+    vi.spyOn(backend, "getSnapshot").mockResolvedValue(snapshot);
+    render(<App backendClient={backend} />);
+    await screen.findByRole("navigation", { name: "主导航" });
+    await user.click(screen.getByRole("button", { name: "设置" }));
+    expect(screen.getByText(hint)).toBeInTheDocument();
+    expect(screen.getByText(/共享它的账号与网络设置/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "安装网络服务" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "启动服务" })).not.toBeInTheDocument();
+  });
+
   it("loads the fallback snapshot and filters the device view", async () => {
     const user = userEvent.setup();
     render(<App backendClient={createBackend()} />);

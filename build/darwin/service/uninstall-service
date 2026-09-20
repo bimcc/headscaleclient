@@ -5,10 +5,16 @@ PATH=/usr/bin:/bin:/usr/sbin:/sbin
 export PATH
 [ "$(id -u)" -eq 0 ] || { echo 'Run this script with sudo.' >&2; exit 1; }
 service_root='/Library/Application Support/BIMCC/HeadscaleClient'
-/bin/sh "$service_root/service-control" stop
+if [ -e /Library/LaunchDaemons/io.headscaleclient.tailscaled.plist ]; then
+  /bin/sh "$service_root/service-control" stop
+elif launchctl print system/io.headscaleclient.tailscaled >/dev/null 2>&1; then
+  echo 'Managed registration is missing; repair the installation before removal.' >&2
+  exit 1
+fi
 rm -f '/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist' \
   '/var/run/headscaleclient-tailscaled.socket' \
-  "$service_root/daemon/tailscale" "$service_root/daemon/tailscaled"
+  "$service_root/daemon/tailscale" "$service_root/daemon/tailscaled" \
+  "$service_root/installation-mode"
 pkgutil --forget io.headscaleclient.desktop.pkg >/dev/null 2>&1 || true
 printf '%s\n' '网络服务已移除，登录状态已保留。可将 /Applications/HeadscaleClient.app 移到废纸篓。' \
   'Network service removed; login state preserved. You can now move /Applications/HeadscaleClient.app to Trash.'

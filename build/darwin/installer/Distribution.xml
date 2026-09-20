@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+  <title>HeadscaleClient</title>
+  <welcome file="welcome.html" mime-type="text/html"/>
+  <conclusion file="conclusion.html" mime-type="text/html"/>
+  <options customize="always" require-scripts="false" hostArchitectures="@ARCH@"/>
+  <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+  <allowed-os-versions><os-version min="12.0"/></allowed-os-versions>
+  <script><![CDATA[
+    // Advisory UI only; privileged scripts repeat broader live detection.
+    function hasExternal() {
+      var paths = ['/Applications/Tailscale.app',
+        '/Library/LaunchDaemons/com.tailscale.tailscaled.plist',
+        '/Library/LaunchDaemons/homebrew.mxcl.tailscale.plist',
+        '/Library/LaunchDaemons/homebrew.mxcl.tailscaled.plist',
+        '/var/run/tailscaled.socket'];
+      for (var i = 0; i < paths.length; i++) {
+        if (system.files.fileExistsAtPath(paths[i])) return true;
+      }
+      return false;
+    }
+    function hasManaged() {
+      return system.files.fileExistsAtPath('/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist');
+    }
+  ]]></script>
+  <choices-outline>
+    <line choice="client"/>
+    <line choice="reuse"/>
+    <line choice="upgrade"/>
+    <line choice="automatic"/>
+    <line choice="conflict"/>
+  </choices-outline>
+  <choice id="client" title="HeadscaleClient" enabled="false" selected="true"
+    description="安装客户端及备用组件；只在需要时注册自带网络服务。 Install the client and inactive bundled components; register a network service only when needed.">
+    <pkg-ref id="io.headscaleclient.desktop.pkg"/>
+  </choice>
+  <choice id="reuse" title="复用现有 Tailscale 服务 / Reuse existing service"
+    visible="hasExternal() &amp;&amp; !hasManaged()" enabled="false" selected="false"
+    description="检测到外部服务。不覆盖、不卸载，不启动第二套服务；原服务必须可访问。 External service detected. It will be left unchanged; it must be accessible to the client."/>
+  <choice id="upgrade" title="更新本产品服务，保留账号 / Update managed service"
+    visible="hasManaged() &amp;&amp; !hasExternal()" enabled="false" selected="false"
+    description="只更新 HeadscaleClient 管理的服务，保留身份与配置。 Only the product-owned service is updated; identities and settings are preserved."/>
+  <choice id="automatic" title="自动检测网络服务 / Automatic service detection"
+    visible="!hasManaged() &amp;&amp; !hasExternal()" enabled="false" selected="false"
+    description="安装时再次检查：有外部服务则复用，没有才安装自带服务。 Installation rechecks running services: reuse an existing service, otherwise install the bundled service."/>
+  <choice id="conflict" title="检测到两套服务，请先处理冲突 / Resolve service conflict"
+    visible="hasManaged() &amp;&amp; hasExternal()" enabled="false" selected="false"
+    description="安装器不会自动移除其中一套服务。请先移除不需要的服务再安装。 No service will be removed automatically. Remove the unwanted installation before retrying."/>
+  <pkg-ref id="io.headscaleclient.desktop.pkg" version="@VERSION@" onConclusion="none">component.pkg</pkg-ref>
+</installer-gui-script>

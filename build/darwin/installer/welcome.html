@@ -1,0 +1,10 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><style>body{font:14px -apple-system,sans-serif;color:#222}h1{font-size:22px}li{margin:10px 0}.en{color:#555;font-size:12px}</style></head><body>
+<h1>HeadscaleClient · 统一安装包</h1>
+<p>无需选择独立版或 GUI-only 版，安装器自动检测网络服务。</p>
+<ul><li>已有外部 Tailscale：复用原服务，不覆盖、不卸载。</li>
+<li>已有本产品服务：更新或修复，保留账号和配置。</li>
+<li>没有网络服务：安装自带的 Tailscale 网络服务。</li></ul>
+<p>“安装类型”显示检测提示；详细结果可在“窗口 → 安装器日志”查看。外部服务未启动、权限不足或不兼容时，请在客户端“设置”查看状态，不会自动启动第二套服务。</p>
+<p>复用时将共享原服务的当前账号、连接和网络设置。不要同时从两个界面操作登录或网络设置。切换为独立模式需要先自行卸载原服务，可能需要重新登录。</p>
+<p class="en">One installer: reuse an existing Tailscale service unchanged, update our managed service while preserving identities, or install a service on a fresh Mac. Installation Type shows advisory detection; Installer Log records the actual result. Reuse shares the existing service's account and network preferences. Quit HeadscaleClient before upgrading.</p>
+</body></html>

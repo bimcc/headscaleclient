@@ -3,19 +3,14 @@ set -eu
 PATH=/usr/bin:/bin:/usr/sbin:/sbin
 export PATH
 fail() { printf '%s\n' "$*" >&2; exit 1; }
-# Offline volumes cannot safely register a live launchd service.
 [ "${3:-/}" = / ] || fail 'Install HeadscaleClient on the running macOS system volume.'
 if pgrep -x headscaleclient >/dev/null; then
   fail '请先从菜单栏退出 HeadscaleClient，再重新安装。 Quit HeadscaleClient from the menu bar and retry installation.'
 fi
-[ ! -d /Applications/Tailscale.app ] || fail '已安装 Tailscale.app。请使用 GUI-only 版，或先卸载官方客户端再安装。 Tailscale.app is installed. Use the GUI-only build or uninstall it first.'
-for other in /Library/LaunchDaemons/com.tailscale.tailscaled.plist /Library/LaunchDaemons/homebrew.mxcl.tailscale.plist /Library/LaunchDaemons/homebrew.mxcl.tailscaled.plist; do
-  [ ! -e "$other" ] || fail "An external Tailscale service exists: $other. Use the GUI-only build."
-done
 service_root='/Library/Application Support/BIMCC/HeadscaleClient'
 plist='/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist'
-# Installer must not write root executables through a user-controlled symlink.
-for path in '/Applications/HeadscaleClient.app' '/Library/Application Support' '/Library/Application Support/BIMCC' "$service_root" "$service_root/daemon" "$service_root/state" '/Library/LaunchDaemons' "$plist"; do
+# Root executables and package destinations must not traverse writable links.
+for path in '/Applications/HeadscaleClient.app' '/Library' '/Library/Application Support' '/Library/Application Support/BIMCC' "$service_root" "$service_root/daemon" "$service_root/state" "$service_root/service-control" "$service_root/service-policy" "$service_root/installation-mode" "$service_root/launchd-template.plist" '/Library/LaunchDaemons' "$plist"; do
   [ ! -L "$path" ] || fail "Unsafe symlink at installation target: $path"
   if [ -e "$path" ]; then
     [ "$(stat -f '%u' "$path")" = 0 ] || fail "Installation target is not root-owned: $path"
@@ -23,14 +18,19 @@ for path in '/Applications/HeadscaleClient.app' '/Library/Application Support' '
     [ $((0$mode & 022)) -eq 0 ] || fail "Installation target is writable by other users: $path"
   fi
 done
-for process in $(pgrep -x tailscaled || true); do
-  command=$(ps -p "$process" -o command=)
-  case "$command" in "$service_root/daemon/tailscaled"*) ;; *) fail 'Another tailscaled is running; stop it before installation.' ;; esac
-done
-if pgrep -f 'Tailscale[.]app/Contents/|io[.]tailscale[.]ipn[.](macsys|network-extension)' >/dev/null; then
-  fail 'Quit the other Tailscale client before installation.'
-fi
-if launchctl print system/io.headscaleclient.tailscaled >/dev/null 2>&1; then
-  [ "$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' "$plist")" = "$service_root/daemon/tailscaled" ] || fail 'Unexpected existing service executable.'
-  launchctl bootout system/io.headscaleclient.tailscaled
-fi
+# This copy belongs to the package, not the previous installation.
+mode=$(/bin/sh "$(dirname "$0")/service-policy")
+case "$mode" in
+  conflict) fail '同时检测到本产品和外部 Tailscale 服务。请先移除不需要的一套服务，再重试；安装器不会替您切换或删除账号。 Both managed and external services exist. Resolve the conflict first; no service or identity has been changed.' ;;
+  external) printf '%s\n' '将复用现有 Tailscale 服务，不安装或覆盖网络服务。 Reusing the existing Tailscale service; no network service will be installed or replaced.' ;;
+  managed)
+    [ "$(/usr/libexec/PlistBuddy -c 'Print :Label' "$plist")" = io.headscaleclient.tailscaled ] || fail 'Unexpected existing service label.'
+    [ "$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' "$plist")" = "$service_root/daemon/tailscaled" ] || fail 'Unexpected existing service executable.'
+    printf '%s\n' '更新本产品网络服务，保留账号和配置。 Updating the managed service; identities and settings will be preserved.'
+    if launchctl print system/io.headscaleclient.tailscaled >/dev/null 2>&1; then
+      launchctl bootout system/io.headscaleclient.tailscaled
+    fi
+    ;;
+  missing) printf '%s\n' '未检测到 Tailscale 服务，将安装自带服务。 No existing Tailscale service found; installing the bundled service.' ;;
+  *) fail 'Unexpected service detection result.' ;;
+esac
