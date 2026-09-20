@@ -50,9 +50,17 @@ export function androidBindings(): BackendBindings {
 export function androidSubscribe(getSnapshot: () => Promise<AppSnapshot>): HeadscaleBackend["subscribe"] {
   return (onSnapshot, onError) => {
     let active = true;
+    let lastSequence = 0;
     const refresh = () => { void getSnapshot().then((s) => { if (active) onSnapshot(s); }).catch((e: Error) => { if (active) onError(e.message); }); };
     const listener = (event: Event) => {
       const { name, payload } = (event as CustomEvent).detail;
+      if (name === "android:vpn-state-changed") { refresh(); return; }
+      if (typeof payload.sequence === "number") {
+        if (payload.sequence <= lastSequence) return;
+        const gap = lastSequence !== 0 && payload.sequence > lastSequence + 1;
+        lastSequence = payload.sequence;
+        if (gap) { refresh(); return; }
+      }
       if ((name === "app:snapshot-changed" || name === "app:login-finished") && payload.snapshot) onSnapshot(payload.snapshot);
       if (name === "app:operation-failed") onError(payload.problem?.message ?? "Android operation failed");
     };

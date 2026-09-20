@@ -41,6 +41,10 @@ jobs:
           go test ./bridge
       - name: Prepare Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '13114758'
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
       - name: Install pinned Android packages
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;28.2.13676358'
       - name: Build APK with embedded network core

@@ -87,9 +87,7 @@ func (c *Client) Request(method, arguments string) string {
 func (c *Client) SetVPNState(desired, established bool) {
 	c.daemon.desired.Store(desired)
 	c.daemon.established.Store(established)
-	if snapshot, err := c.service.GetSnapshot(); err == nil {
-		c.emit(application.EventSnapshotChanged, map[string]any{"snapshot": snapshot})
-	}
+	c.emit("android:vpn-state-changed", map[string]any{})
 }
 
 type vpnDaemon struct {
