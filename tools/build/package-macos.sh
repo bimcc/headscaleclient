@@ -35,7 +35,8 @@ pkgbuild --root "$stage/root" --identifier io.headscaleclient.desktop.pkg --vers
   --component-plist "$stage/components.plist" "$stage/component.pkg"
 productbuild --synthesize --package "$stage/component.pkg" "$stage/distribution.xml"
 # A package must not install an arm64 daemon on Intel or vice versa.
-sed -i '' "s/<options /<options hostArchitectures=\"$machine_arch\" /" "$stage/distribution.xml"
+sed -E -i '' -e 's/ hostArchitectures="[^"]*"//g' \
+  -e "s/<options /<options hostArchitectures=\"$machine_arch\" /" "$stage/distribution.xml"
 productbuild --distribution "$stage/distribution.xml" --package-path "$stage" \
   "$root/bin/headscaleclient-macos-$arch-installer.pkg"
 ditto -c -k --keepParent "$app" "$root/bin/headscaleclient-macos-$arch-gui-only.zip"
