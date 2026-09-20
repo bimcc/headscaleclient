@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import engine.Client;
@@ -26,6 +27,7 @@ public final class ClientApplication extends Application implements AppContext, 
     final ExecutorService worker = Executors.newFixedThreadPool(3);
     final ExecutorService vpnWorker = Executors.newSingleThreadExecutor();
     final CompletableFuture<Client> client = new CompletableFuture<>();
+    final AtomicReference<String> activeVPN = new AtomicReference<>();
     final CopyOnWriteArrayList<EventListener> listeners = new CopyOnWriteArrayList<>();
     private ConnectivityManager connectivity;
     private volatile Network underlying;

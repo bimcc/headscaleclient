@@ -4,8 +4,10 @@ cd "$(dirname "$0")/.."
 export PATH="$(go env GOPATH)/bin:$PATH"
 export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk/28.2.13676358}"
 go mod download
-go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240806205939-81131f6468ab
-go install golang.org/x/mobile/cmd/gobind@v0.0.0-20240806205939-81131f6468ab
+# Build the pinned x/mobile tools with this module's locked x/tools version.
+# Installing with @version would discard these dependency selections and pull
+# 2024 x/tools, which is incompatible with the Go 1.26 token.FileSet layout.
+go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
 mkdir -p android/app/libs android/app/src/main/assets/licenses
 gomobile bind -target=android/arm64,android/amd64 -androidapi=26 -o android/app/libs/engine.aar ./engine github.com/tailscale/tailscale-android/libtailscale
 cp -R ../frontend/dist/. android/app/src/main/assets/

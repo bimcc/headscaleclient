@@ -16,7 +16,6 @@ public final class TunnelService extends VpnService implements IPNService {
     private final AtomicBoolean attached = new AtomicBoolean();
     private ClientApplication app;
     private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
-    private boolean established;
     @Override public void onCreate() {
         super.onCreate(); app = (ClientApplication) getApplication();
         getSystemService(NotificationManager.class).createNotificationChannel(new NotificationChannel("vpn", getString(R.string.vpn_channel), NotificationManager.IMPORTANCE_LOW));
@@ -26,10 +25,14 @@ public final class TunnelService extends VpnService implements IPNService {
             disconnectVPN(); return START_NOT_STICKY;
         }
         startForeground(1, notification(false));
+        app.activeVPN.set(instanceId);
         app.vpnWorker.execute(() -> {
             try {
-                app.awaitClient().setVPNState(true, false);
-                if (attached.compareAndSet(false, true)) Libtailscale.requestVPN(this);
+                if (!instanceId.equals(app.activeVPN.get()) || !app.desired()) return;
+                if (attached.compareAndSet(false, true)) {
+                    app.awaitClient().setVPNState(true, false);
+                    Libtailscale.requestVPN(this);
+                }
                 // A sticky restart restores only previously authorized intent.
                 if (intent == null) app.awaitClient().request("SetConnection", "[true]");
             } catch (Exception e) { disconnectVPN(); }
@@ -68,12 +71,16 @@ public final class TunnelService extends VpnService implements IPNService {
         };
     }
     @Override public void updateVpnStatus(boolean connected) {
-        established = connected;
-        app.worker.execute(() -> { try { app.awaitClient().setVPNState(app.desired(), connected); } catch (Exception ignored) {} });
-        main.post(() -> { if (app.desired()) getSystemService(NotificationManager.class).notify(1, notification(connected)); });
+        app.vpnWorker.execute(() -> {
+            if (!instanceId.equals(app.activeVPN.get())) return;
+            try { app.awaitClient().setVPNState(app.desired(), connected); } catch (Exception ignored) {}
+        });
+        main.post(() -> { if (app.desired() && instanceId.equals(app.activeVPN.get())) getSystemService(NotificationManager.class).notify(1, notification(connected)); });
     }
     @Override public void close() { main.post(this::stopSelf); }
     @Override public void disconnectVPN() {
+        String owner = app.activeVPN.get();
+        if (owner != null && !instanceId.equals(owner)) { close(); return; }
         app.setDesired(false);
         app.worker.execute(() -> {
             try { app.awaitClient().setVPNState(false, false); app.awaitClient().request("SetConnection", "[false]"); }
@@ -83,9 +90,13 @@ public final class TunnelService extends VpnService implements IPNService {
     }
     @Override public void onRevoke() { disconnectVPN(); super.onRevoke(); }
     @Override public void onDestroy() {
-        established = false;
-        app.worker.execute(() -> { try { app.awaitClient().setVPNState(false, false); } catch (Exception ignored) {} });
-        app.vpnWorker.execute(() -> { if (attached.compareAndSet(true, false)) Libtailscale.serviceDisconnect(this); });
+        app.activeVPN.compareAndSet(instanceId, null);
+        app.vpnWorker.execute(() -> {
+            if (app.activeVPN.get() == null) {
+                try { app.awaitClient().setVPNState(false, false); } catch (Exception ignored) {}
+            }
+            if (attached.compareAndSet(true, false)) Libtailscale.serviceDisconnect(this);
+        });
         stopForeground(STOP_FOREGROUND_REMOVE); super.onDestroy();
     }
 }

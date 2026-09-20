@@ -85,15 +85,20 @@ func (c *Client) Request(method, arguments string) string {
 
 // SetVPNState records the Android TUN state separately from login/backend state.
 func (c *Client) SetVPNState(desired, established bool) {
-	c.daemon.desired.Store(desired)
-	c.daemon.established.Store(established)
+	var state uint32
+	if desired {
+		state |= 1
+	}
+	if established {
+		state |= 2
+	}
+	c.daemon.vpnState.Store(state)
 	c.emit("android:vpn-state-changed", map[string]any{})
 }
 
 type vpnDaemon struct {
 	*adapter.Adapter
-	desired     atomic.Bool
-	established atomic.Bool
+	vpnState atomic.Uint32
 }
 
 func (d *vpnDaemon) Snapshot(ctx context.Context) (domain.AppSnapshot, error) {
@@ -101,11 +106,8 @@ func (d *vpnDaemon) Snapshot(ctx context.Context) (domain.AppSnapshot, error) {
 	if err != nil {
 		return snapshot, err
 	}
-	if !d.desired.Load() {
-		snapshot.State.Connection = domain.ConnectionStopped
-	} else if !d.established.Load() && (snapshot.State.Connection == domain.ConnectionRunning || snapshot.State.Connection == domain.ConnectionDegraded) {
-		snapshot.State.Connection = domain.ConnectionStarting
-	}
+	state := d.vpnState.Load()
+	snapshot.State.Connection = bridge.VPNConnectionState(snapshot.State.Connection, state&1 != 0, state&2 != 0)
 	snapshot.DisplayState = domain.DeriveDisplayState(snapshot.State)
 	return snapshot, nil
 }
