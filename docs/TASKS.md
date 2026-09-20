@@ -180,9 +180,11 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 
 ## Release readiness
 
-- [>] REL-007 Release 0.2.1 with Wails beta.20 after user acceptance; synchronize
-  product versions, verify Windows and native Mac/Linux packages, publish a new
-  stable GitHub release with checksums, and retain the 0.2.0 release history.
+- [x] REL-007 Release 0.2.1 with Wails beta.20 after user acceptance. Product
+  versions, Windows and native Mac/Linux packages verified; published four
+  installers and SHA256SUMS as GitHub latest/stable. Remote sizes/digests and
+  source tag match; all five 0.2.0 assets remain unchanged. See
+  [release verification](verification/RELEASE-0.2.1.md).
 
 - [x] REL-006 Release 0.2.0: synchronized product/package versions, rebuilt
   Windows and native Mac/Linux artifacts, validated and published four installers

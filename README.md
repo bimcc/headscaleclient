@@ -10,7 +10,7 @@ NAT traversal, routing, and DNS remain owned by the upstream daemon.
 
 ## Current baseline
 
-- HeadscaleClient [0.2.1](https://github.com/bimcc/headscaleclient/releases/latest)
+- HeadscaleClient [0.2.1](https://github.com/bimcc/headscaleclient/releases/latest) (latest stable release)
 
 - Wails `v3.0.0-beta.20`
 - Go `1.26.5`
