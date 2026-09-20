@@ -24,24 +24,28 @@ contents:
       owner: root
       group: root
   - src: "./bin/daemon/linux-${GOARCH}/tailscaled"
+    expand: true
     dst: "/usr/lib/headscaleclient/daemon/tailscaled"
     file_info:
       mode: 0755
       owner: root
       group: root
   - src: "./bin/daemon/linux-${GOARCH}/tailscale"
+    expand: true
     dst: "/usr/lib/headscaleclient/daemon/tailscale"
     file_info:
       mode: 0755
       owner: root
       group: root
   - src: "./bin/daemon/linux-${GOARCH}/provenance.json"
+    expand: true
     dst: "/usr/share/doc/headscaleclient/daemon/provenance.json"
     file_info:
       mode: 0644
       owner: root
       group: root
   - src: "./bin/daemon/linux-${GOARCH}/licenses/TAILSCALE-LICENSE.txt"
+    expand: true
     dst: "/usr/share/doc/headscaleclient/daemon/TAILSCALE-LICENSE.txt"
     file_info:
       mode: 0644

@@ -29,9 +29,17 @@
 
 ## Verification
 
-In progress: Windows backend/frontend checks and installer rebuild; native macOS
-Apple Silicon/Intel builds, install/upgrade/removal and normal-user LocalAPI
-smoke tests. Results will be recorded after the actual runs.
+- Windows: `go test ./...`, `go vet ./...`, all 62 frontend tests and frontend
+  production build passed. Bindings regenerated with beta.23.
+- Windows AMD64 NSIS installer rebuilt (24,991,805 bytes), both installer
+  language tables retained. Binary build metadata confirms Wails beta.23 and
+  Tailscale 1.102.2. SHA-256:
+  `769258D5D6CBB1F0F51FECB52E7CF3111FF92A29EC3E45B723ED0F816D7DD9F7`.
+- Fixed a pre-existing Linux package configuration failure observed on base
+  commit e38d497: nfpm content paths require `expand: true` to interpolate
+  `${GOARCH}`. This is not a regression introduced by Wails beta.23.
+- Native macOS Apple Silicon/Intel builds and install/upgrade/removal smoke
+  tests are running. Results will be recorded after the actual runs.
 
 ## Release limitations
 
