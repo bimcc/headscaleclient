@@ -12,7 +12,7 @@ plist=/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist
 release_version=$(node -p 'require("./frontend/package.json").version')
 verify_installed_version() {
   test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /Applications/HeadscaleClient.app/Contents/Info.plist)" = "$release_version"
-  cmp bin/headscaleclient /Applications/HeadscaleClient.app/Contents/MacOS/headscaleclient
+  cmp bin/headscaleclient.app/Contents/MacOS/headscaleclient /Applications/HeadscaleClient.app/Contents/MacOS/headscaleclient
   test "$(pkgutil --pkg-info io.headscaleclient.desktop.pkg | awk '/^version:/ {print $2}')" = "$release_version"
 }
 
@@ -159,7 +159,11 @@ previous="$PWD/bin/previous-macos-$arch.pkg"
 curl --fail --location --retry 2 --max-time 120 \
   "https://github.com/bimcc/headscaleclient/releases/download/v0.1.0-preview.20260920/headscaleclient-macos-$arch-installer.pkg" -o "$previous"
 test "$(shasum -a 256 "$previous" | awk '{print $1}')" = "$previous_sha"
+# Remove the newer GUI from the install location so this really starts at 0.1.0.
+# Preserve it under the already-created disposable fixture directory.
+sudo mv /Applications/HeadscaleClient.app "$fixture/HeadscaleClient-current.app"
 sudo installer -pkg "$previous" -target /
+test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /Applications/HeadscaleClient.app/Contents/Info.plist)" = 0.1.0
 sudo test -f "$service_root/state/upgrade-check"
 sudo installer -pkg "$pkg" -target /
 verify_installed_version
