@@ -29,6 +29,16 @@ both modes, like the Windows installer. No external service is overwritten.
   passed on Windows, macOS and Ubuntu, including frontend/Go tests, native GUI
   builds and Linux DEB content inspection.
 
+## Artifacts
+
+Build source: `f654741bc832551ba75e0a9a4819dc6f315db0f0`.
+Downloaded CI artifacts matched the generated SHA-256 sums:
+
+| PKG | Bytes | SHA-256 |
+| --- | ---: | --- |
+| arm64 | 22403040 | `ff0614f0ab1b327fac7af630aef52a0f68cec06e1bc482e70db0b83a3928b754` |
+| amd64 | 24584550 | `f85d201520495a3f2e54257ff82879698b54d8dc9cc4b34652befdd9f4b7d462` |
+
 ## Limits
 
 The official-app directory fixture tests detection only. It does not replace
