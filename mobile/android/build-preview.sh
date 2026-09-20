@@ -10,7 +10,9 @@ go mod download
 mkdir -p android/app/libs android/app/src/main/assets/licenses
 if [[ "${USE_CACHED_CORE:-0}" != 1 || ! -f android/app/libs/engine.aar ]]; then
   go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
-  gomobile bind -target=android/arm64,android/amd64 -androidapi=26 -ldflags='-s -w' -o android/app/libs/engine.aar ./engine github.com/tailscale/tailscale-android/libtailscale
+  core_version="$(go list -m -f '{{.Version}}' tailscale.com)"
+  core_version="${core_version#v}"
+  gomobile bind -target=android/arm64,android/amd64 -androidapi=26 -ldflags="-s -w -X tailscale.com/version.longStamp=$core_version -X tailscale.com/version.shortStamp=$core_version" -o android/app/libs/engine.aar ./engine github.com/tailscale/tailscale-android/libtailscale
 fi
 cp -R ../frontend/dist/. android/app/src/main/assets/
 cp ../THIRD_PARTY_NOTICES.md ../LICENSE android/app/src/main/assets/licenses/

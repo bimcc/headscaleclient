@@ -108,6 +108,7 @@ func (d *vpnDaemon) Snapshot(ctx context.Context) (domain.AppSnapshot, error) {
 	}
 	state := d.vpnState.Load()
 	snapshot.State.Connection = bridge.VPNConnectionState(snapshot.State.Connection, state&1 != 0, state&2 != 0)
+	snapshot.HealthNotices = bridge.FilterVPNHealth(snapshot.HealthNotices, state&1 != 0, snapshot.Preferences.WantRunning)
 	snapshot.DisplayState = domain.DeriveDisplayState(snapshot.State)
 	return snapshot, nil
 }

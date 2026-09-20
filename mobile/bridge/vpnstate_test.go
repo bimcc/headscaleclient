@@ -5,6 +5,22 @@ import (
 	"testing"
 )
 
+func TestStoppedNoticeIsOnlySuppressedForAnIntentionalDisconnect(t *testing.T) {
+	for _, tc := range []struct {
+		desired, want bool
+		count         int
+	}{{false, false, 1}, {true, false, 2}, {false, true, 2}} {
+		notices := []domain.HealthNotice{
+			{Code: domain.HealthNoticeTailscaleWarning, Message: "Tailscale is stopped."},
+			{Code: domain.HealthNoticeTailscaleWarning, Message: "DNS unavailable"},
+		}
+		got := FilterVPNHealth(notices, tc.desired, tc.want)
+		if len(got) != tc.count || got[len(got)-1].Message != "DNS unavailable" {
+			t.Fatalf("unexpected health filtering: %+v", got)
+		}
+	}
+}
+
 func TestVPNOwnershipAndTunnelAreRequiredForConnected(t *testing.T) {
 	for _, tc := range []struct {
 		name                 string

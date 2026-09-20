@@ -39,6 +39,8 @@ public class PreviewSmokeTest {
             assertEquals("android", snapshot.getJSONObject("diagnostics").getString("platform"));
             assertEquals("ready", snapshot.getJSONObject("runtime").getString("daemon"));
             assertEquals("stopped", snapshot.getJSONObject("runtime").getString("connection"));
+            assertEquals("1.102.2", snapshot.getJSONObject("diagnostics").getString("daemonVersion"));
+            assertFalse(snapshot.getJSONArray("healthNotices").toString().contains("Tailscale is stopped."));
             assertOverviewRendered(activity);
             activity.recreate();
             assertSame(client, app.awaitClient());
