@@ -8,7 +8,7 @@ go mod download
 # Installing with @version would discard these dependency selections and pull
 # 2024 x/tools, which is incompatible with the Go 1.26 token.FileSet layout.
 mkdir -p android/app/libs android/app/src/main/assets/licenses
-if [[ ! -f android/app/libs/engine.aar || "${REBUILD_CORE:-0}" == 1 ]]; then
+if [[ "${USE_CACHED_CORE:-0}" != 1 || ! -f android/app/libs/engine.aar ]]; then
   go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
   gomobile bind -target=android/arm64,android/amd64 -androidapi=26 -ldflags='-s -w' -o android/app/libs/engine.aar ./engine github.com/tailscale/tailscale-android/libtailscale
 fi

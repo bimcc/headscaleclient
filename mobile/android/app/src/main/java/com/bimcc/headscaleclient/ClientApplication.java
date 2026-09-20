@@ -137,11 +137,12 @@ public final class ClientApplication extends Application implements AppContext, 
             if (links == null || links.getInterfaceName() == null || !seen.add(links.getInterfaceName())) continue;
             String name = links.getInterfaceName(); NetworkInterface iface = NetworkInterface.getByName(name);
             if (iface == null) continue;
+            int mtu = Build.VERSION.SDK_INT >= 29 ? links.getMtu() : iface.getMTU();
             JSONArray addresses = new JSONArray();
             for (LinkAddress address : links.getLinkAddresses()) addresses.put(new JSONObject()
                 .put("ip", address.getAddress().getHostAddress()).put("prefixLen", address.getPrefixLength()));
             result.put(new JSONObject().put("name", name).put("index", iface.getIndex())
-                .put("mtu", links.getMtu() > 0 ? links.getMtu() : 1500).put("up", true)
+                .put("mtu", mtu > 0 ? mtu : 1500).put("up", true)
                 .put("loopback", iface.isLoopback()).put("pointToPoint", iface.isPointToPoint())
                 .put("multicast", iface.supportsMulticast()).put("broadcast", false).put("addrs", addresses));
         }

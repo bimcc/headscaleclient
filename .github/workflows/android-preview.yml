@@ -54,6 +54,8 @@ jobs:
           path: mobile/android/app/libs/engine.aar
           key: android-core-ndk28-go1265-${{ hashFiles('go.mod', 'go.sum', 'internal/**/*.go', 'mobile/go.*', 'mobile/engine/**', 'mobile/bridge/**', 'mobile/android/build-preview.sh') }}
       - name: Build APK with embedded network core
+        env:
+          USE_CACHED_CORE: ${{ steps.core-cache.outputs.cache-hit == 'true' && '1' || '0' }}
         run: bash mobile/android/build-preview.sh
       - name: Cache compiled core even when Java or lint fails
         if: always() && steps.core-cache.outputs.cache-hit != 'true' && hashFiles('mobile/android/app/libs/engine.aar') != ''
@@ -73,14 +75,14 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: gradle -p mobile/android --no-daemon connectedDebugAndroidTest
+          script: bash mobile/android/verify-emulator.sh
       - name: Upload preview and validation reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: headscaleclient-android-preview
           path: |
-            bin/android-preview/*.apk
+            bin/android-preview/
             mobile/android/app/build/reports/
             mobile/android/app/build/outputs/androidTest-results/
           if-no-files-found: warn
