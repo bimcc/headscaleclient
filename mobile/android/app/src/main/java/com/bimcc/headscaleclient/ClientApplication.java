@@ -90,7 +90,7 @@ public final class ClientApplication extends Application implements AppContext, 
         String gateway = "";
         if (links != null) {
             for (java.net.InetAddress address : links.getDnsServers()) servers.add(address.getHostAddress());
-            for (RouteInfo route : links.getRoutes()) if (route.isDefaultRoute() && route.hasGateway()) { gateway = route.getGateway().getHostAddress(); break; }
+            for (RouteInfo route : links.getRoutes()) if (route.isDefaultRoute() && route.getGateway() != null && !route.getGateway().isAnyLocalAddress()) { gateway = route.getGateway().getHostAddress(); break; }
         }
         dns = servers + "\n" + (links != null && links.getDomains() != null ? links.getDomains() : "");
         Libtailscale.onGatewayChanged(gateway);
@@ -123,7 +123,7 @@ public final class ClientApplication extends Application implements AppContext, 
     @Override public long getSDKInt() { return Build.VERSION.SDK_INT; }
     @Override public String getDeviceName() {
         String name = Settings.Global.getString(getContentResolver(), "device_name");
-        return name == null || name.isBlank() ? Build.MANUFACTURER + " " + Build.MODEL : name;
+        return name == null || name.trim().isEmpty() ? Build.MANUFACTURER + " " + Build.MODEL : name;
     }
     @Override public String getInstallSource() { return "headscaleclient-android-preview"; }
     @Override public boolean shouldUseGoogleDNSFallback() { return false; }

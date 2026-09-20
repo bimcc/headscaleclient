@@ -5,6 +5,12 @@ import android.net.Uri;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import android.webkit.WebView;
+import android.widget.FrameLayout;
+import android.os.Build;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import engine.Client;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -15,6 +21,8 @@ import static org.junit.Assert.*;
 public class PreviewSmokeTest {
     @Test public void embeddedCoreSurvivesActivityRecreation() throws Exception {
         ClientApplication app = ApplicationProvider.getApplicationContext();
+        if (Build.VERSION.SDK_INT >= 33) InstrumentationRegistry.getInstrumentation().getUiAutomation()
+            .grantRuntimePermission(app.getPackageName(), android.Manifest.permission.POST_NOTIFICATIONS);
         try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
             Client client = app.awaitClient();
             JSONObject response = new JSONObject(client.request("GetSnapshot", "[]"));
@@ -24,11 +32,29 @@ public class PreviewSmokeTest {
             assertEquals("android", snapshot.getJSONObject("diagnostics").getString("platform"));
             assertEquals("ready", snapshot.getJSONObject("runtime").getString("daemon"));
             assertEquals("stopped", snapshot.getJSONObject("runtime").getString("connection"));
+            assertOverviewRendered(activity);
             activity.recreate();
             assertSame(client, app.awaitClient());
             assertFalse(new JSONObject(client.request("GetSnapshot", "[]")).has("error"));
+            assertOverviewRendered(activity);
             assertTrue(new JSONObject(client.request("CallLocalAPI", "[\"prefs\"]")).has("error"));
         }
+    }
+
+    private void assertOverviewRendered(ActivityScenario<MainActivity> activity) throws Exception {
+        String text = "";
+        for (int attempt = 0; attempt < 40; attempt++) {
+            LinkedBlockingQueue<String> results = new LinkedBlockingQueue<>();
+            activity.onActivity(screen -> {
+                FrameLayout root = screen.findViewById(android.R.id.content);
+                if (!(root.getChildAt(0) instanceof WebView)) { results.add("WebView unavailable"); return; }
+                ((WebView)root.getChildAt(0)).evaluateJavascript("document.body.innerText", results::add);
+            });
+            text = results.poll(2, TimeUnit.SECONDS);
+            if (text != null && text.contains("概览") && text.contains("网络与账号")) return;
+            Thread.sleep(500);
+        }
+        fail("Shared UI did not render native overview: " + text);
     }
 
     @Test public void identitiesAreEncryptedAndBoundToTheirKey() throws Exception {

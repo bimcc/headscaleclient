@@ -47,8 +47,20 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Install pinned Android packages
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;28.2.13676358'
+      - name: Restore embedded core
+        id: core-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: mobile/android/app/libs/engine.aar
+          key: android-core-ndk28-go1265-${{ hashFiles('go.mod', 'go.sum', 'internal/**/*.go', 'mobile/go.*', 'mobile/engine/**', 'mobile/bridge/**', 'mobile/android/build-preview.sh') }}
       - name: Build APK with embedded network core
         run: bash mobile/android/build-preview.sh
+      - name: Cache compiled core even when Java or lint fails
+        if: always() && steps.core-cache.outputs.cache-hit != 'true' && hashFiles('mobile/android/app/libs/engine.aar') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: mobile/android/app/libs/engine.aar
+          key: ${{ steps.core-cache.outputs.cache-primary-key }}
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

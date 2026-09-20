@@ -11,8 +11,8 @@ import android.widget.TextView;
 import androidx.webkit.*;
 import org.json.*;
 import java.io.ByteArrayInputStream;
-import java.util.Map;
-import java.util.Set;
+import java.util.Collections;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class MainActivity extends Activity implements ClientApplication.EventListener {
@@ -40,8 +40,8 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
         web.setWebViewClient(new WebViewClient() {
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 WebResourceResponse response = assets.shouldInterceptRequest(request.getUrl());
-                if (response == null) return new WebResourceResponse("text/plain", "UTF-8", 403, "Forbidden", Map.of(), new ByteArrayInputStream(new byte[0]));
-                response.setResponseHeaders(Map.of("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'"));
+                if (response == null) return new WebResourceResponse("text/plain", "UTF-8", 403, "Forbidden", Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
+                response.setResponseHeaders(Collections.singletonMap("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'"));
                 return response;
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -50,8 +50,8 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
                 return true;
             }
         });
-        WebViewCompat.addWebMessageListener(web, "HeadscaleAndroid", Set.of(ORIGIN), (view, message, origin, mainFrame, reply) -> {
-            if (!mainFrame || !ORIGIN.equals(origin.toString()) || pending.get() >= 8) return;
+        WebViewCompat.addWebMessageListener(web, "HeadscaleAndroid", Collections.singleton(ORIGIN), (view, message, origin, mainFrame, reply) -> {
+            if (!mainFrame || !trusted(origin) || pending.get() >= 8) return;
             try {
                 String raw = message.getData(); if (raw == null || raw.length() > 65536) return;
                 JSONObject request = new JSONObject(raw); String id = request.getString("id");
@@ -62,7 +62,7 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
                     respond(reply, id, opened ? "{\"result\":null}" : error(getString(R.string.browser_failed))); return;
                 }
                 boolean wasDesired = app.desired();
-                java.util.concurrent.ExecutorService executor = Set.of("BeginLogin", "SwitchProfile", "SetConnection", "Logout").contains(method) ? app.vpnWorker : app.worker;
+                java.util.concurrent.ExecutorService executor = Arrays.asList("BeginLogin", "SwitchProfile", "SetConnection", "Logout").contains(method) ? app.vpnWorker : app.worker;
                 Runnable execute = () -> executor.execute(() -> {
                     try {
                         String response = app.awaitClient().request(method, args.toString());

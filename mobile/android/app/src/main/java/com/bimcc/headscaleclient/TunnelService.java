@@ -81,7 +81,10 @@ public final class TunnelService extends VpnService implements IPNService {
             if (!instanceId.equals(app.activeVPN.get())) return;
             try { app.awaitClient().setVPNState(app.desired(), connected); } catch (Exception ignored) {}
         });
-        main.post(() -> { if (app.desired() && instanceId.equals(app.activeVPN.get())) getSystemService(NotificationManager.class).notify(1, notification(connected)); });
+        main.post(() -> {
+            if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+            if (app.desired() && instanceId.equals(app.activeVPN.get())) getSystemService(NotificationManager.class).notify(1, notification(connected));
+        });
     }
     @Override public void close() { main.post(this::stopSelf); }
     @Override public void disconnectVPN() {
