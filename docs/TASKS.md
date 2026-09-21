@@ -210,13 +210,23 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] AND-005 Emulator native startup, authorized foreground service, Activity recreation and disconnect passed; permission denial and real OS VPN revocation remain.
 - [ ] AND-006 Honor real-phone login, peer connectivity, background, network handover and Clash proxy acceptance.
 - [ ] AND-007 Production signing, stable update identity and distribution review.
-- [>] AND-008 Fix Honor keyboard/system-bar overlap, official login notification
-  subscription and narrow-screen forms; emulator and rebuilt APK acceptance pending.
-- [>] AND-009 Persist Android update signing and keep one package ID; configure CI
+- [x] AND-008 Fix keyboard/system-bar overlap, official login notification
+  subscription and narrow-screen forms; six emulator tests and final screenshots
+  passed. Honor physical-phone acceptance remains AND-006.
+- [x] AND-009 Persist Android update signing and keep one package ID; configure CI
   secrets and verify replacement installation. Android.1 debug-signer migration is
   a one-time reinstall with local data loss.
+- [x] WIN-UPDATE-001 Replace publisher-derived uninstall keys with a stable product
+  ID; reuse the installed directory, clean known legacy copies and preserve data.
+  Disposable Windows CI covers duplicate-record upgrade, repair, service startup
+  and uninstall. See ADR 0008.
+- [x] SIGN-001 Create an internal Windows test certificate without changing trust
+  stores; retain Android's signing key outside Git and in CI secrets.
+- [>] SIGN-002 Prepare SignPath policy, privacy disclosures and manual CI workflow.
+  Foundation acceptance, real team roles, API credentials and trusted signing remain.
 
 See [Android preview](product/ANDROID.md). These tasks do not imply stable Android support.
+Latest APK and interaction evidence: [Android.2 verification](verification/ANDROID-INTERACTION-2026-09-21.md).
 See [Android verification](verification/ANDROID-PREVIEW-2026-09-21.md) for the APK hash,
 four emulator tests, initial resource sample and remaining physical-phone gates.
 

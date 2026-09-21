@@ -16,6 +16,9 @@ their corresponding behavior.
 8. [Task list](TASKS.md): executable work and current status.
 9. [Verification](verification/): dated, sanitized platform and integration evidence.
 10. [macOS edition](product/MACOS.md): installer choice, service ownership, build and acceptance.
+11. [Android preview](product/ANDROID.md): native VPN host, mobile interaction and device acceptance.
+12. [Single-install and signing decision](adr/0008-single-install-and-signing.md): stable update identities and legacy migration.
+13. [Code signing policy](../CODE_SIGNING.md): test certificates and pending SignPath integration.
 
 ## Document rules
 

@@ -199,6 +199,7 @@ Start at [docs/README.md](docs/README.md).
 - [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Technical design](docs/architecture/TECHNICAL-DESIGN.md)
 - [Security model](docs/architecture/SECURITY.md)
+- [Code signing policy](CODE_SIGNING.md) — SignPath application preparation; not yet approved
 - [Roadmap](docs/ROADMAP.md)
 - [Task list](docs/TASKS.md)
 - [Windows verification](docs/verification/WINDOWS-2026-08-15.md)

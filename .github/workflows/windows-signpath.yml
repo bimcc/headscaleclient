@@ -1,0 +1,96 @@
+name: Windows SignPath signing (manual)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sign:
+    # Enable only after Foundation acceptance, artifact policy review and
+    # configuring the GitHub App. There is no unsigned fallback for this job.
+    if: vars.HEADSCALE_SIGNPATH_ENABLED == 'true'
+    environment: windows-code-signing
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.21.0'
+      - name: Verify and build the selected source revision
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          node tools/build/check-version.mjs
+          pnpm --dir frontend install --frozen-lockfile
+          pnpm --dir frontend test
+          go test ./...
+          ./tools/build/test-windows-upgrade.ps1
+          go tool wails3 build
+      - uses: actions/upload-artifact@v4
+        id: application
+        with:
+          name: signpath-application-input
+          path: bin/headscaleclient.exe
+      - name: Request approved application signing
+        uses: SignPath/github-action-submit-signing-request@4184a38a17e5b37d026a3ed443581c1f03ae1b3a
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_APPLICATION_CONFIGURATION }}
+          github-artifact-id: ${{ steps.application.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1200
+          output-artifact-directory: bin/signed-application
+      - name: Package the signed application with verified upstream files
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $signed = 'bin/signed-application/headscaleclient.exe'
+          if ((Get-AuthenticodeSignature $signed).Status -ne 'Valid') { throw 'Application signature is not publicly trusted.' }
+          Copy-Item $signed bin/headscaleclient.exe -Force
+          choco install nsis --yes --no-progress
+          ./tools/daemon/prepare-windows.ps1 -Architecture amd64 -OutputDirectory bin/daemon/windows-amd64
+          go tool wails3 generate webview2bootstrapper -dir build/windows/nsis
+          ./tools/build/invoke-makensis.ps1 -DaemonDirectory (Resolve-Path bin/daemon/windows-amd64) -ApplicationBinary (Resolve-Path bin/headscaleclient.exe) -ArchitectureFlag AMD64 -ProjectFile (Resolve-Path build/windows/nsis/project.nsi)
+      - uses: actions/upload-artifact@v4
+        id: installer
+        with:
+          name: signpath-installer-input
+          path: bin/headscaleclient-amd64-installer.exe
+      - name: Request approved installer signing
+        uses: SignPath/github-action-submit-signing-request@4184a38a17e5b37d026a3ed443581c1f03ae1b3a
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_INSTALLER_CONFIGURATION }}
+          github-artifact-id: ${{ steps.installer.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1200
+          output-artifact-directory: bin/signed-installer
+      - name: Verify signed output
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = 'bin/signed-installer/headscaleclient-amd64-installer.exe'
+          $signature = Get-AuthenticodeSignature $path
+          if ($signature.Status -ne 'Valid') { throw 'Installer signature is not publicly trusted.' }
+          if (-not $signature.TimeStamperCertificate) { throw 'Installer has no trusted signing timestamp.' }
+          $signature | Select-Object Status,SignerCertificate,TimeStamperCertificate
+          Get-FileHash $path -Algorithm SHA256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: headscaleclient-signpath-signed
+          path: bin/signed-installer/

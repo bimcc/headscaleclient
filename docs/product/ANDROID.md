@@ -2,8 +2,10 @@
 
 Status: installable technical preview, APK and emulator checks passed on
 2026-09-21. Honor physical-phone acceptance remains pending. This is not a stable
-Android release. See [verification evidence](../verification/ANDROID-PREVIEW-2026-09-21.md).
-Desktop remains 0.2.1 / Wails beta.20.
+Android release. See [latest interaction and update verification](../verification/ANDROID-INTERACTION-2026-09-21.md)
+and the [initial preview evidence](../verification/ANDROID-PREVIEW-2026-09-21.md).
+The published desktop release remains 0.2.1; the upgrade-fix candidate is 0.2.2.
+Wails remains beta.20.
 
 ## Product
 
