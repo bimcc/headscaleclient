@@ -32,7 +32,7 @@ under BSD-3-Clause (Copyright Tailscale Inc & AUTHORS). It embeds the Tailscale
 Go 1.102.2 core. The upstream Android and Tailscale license texts are copied to
 the APK's assets/licenses directory at build time.
 
-AndroidX WebKit 1.12.1 uses Apache-2.0 (Android Open Source Project).
+AndroidX WebKit 1.12.1 and AndroidX Core 1.15.0 use Apache-2.0 (Android Open Source Project).
 Go mobile uses the Go Authors' BSD-3-Clause license. Their upstream notices and
 the module dependency inventories apply alongside the shared frontend notices.
 

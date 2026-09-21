@@ -110,6 +110,8 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
         viewport.setBackgroundColor(android.graphics.Color.rgb(247, 249, 249));
         viewport.addView(web, new FrameLayout.LayoutParams(-1, -1));
         setContentView(viewport);
+        WindowCompat.getInsetsController(getWindow(), viewport).setAppearanceLightStatusBars(true);
+        WindowCompat.getInsetsController(getWindow(), viewport).setAppearanceLightNavigationBars(true);
         // Resize the WebView's actual content box. WebView padding does not
         // constrain CSS fixed controls, and adjustResize alone is insufficient
         // with Android 15's enforced edge-to-edge window.

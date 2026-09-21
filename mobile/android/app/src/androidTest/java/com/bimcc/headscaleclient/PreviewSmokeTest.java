@@ -53,6 +53,8 @@ public class PreviewSmokeTest {
             assertSame(client, app.awaitClient());
             assertFalse(new JSONObject(client.request("GetSnapshot", "[]")).has("error"));
             assertOverviewRendered(activity);
+            Thread.sleep(500); // Let the rendered web frame reach SurfaceFlinger.
+            captureScreen("headscale-overview.png");
             assertTrue(new JSONObject(client.request("CallLocalAPI", "[\"prefs\"]")).has("error"));
         }
     }
@@ -118,6 +120,14 @@ public class PreviewSmokeTest {
         fail("UI condition failed: " + script);
     }
 
+    private void captureScreen(String name) throws Exception {
+        try (android.os.ParcelFileDescriptor capture = InstrumentationRegistry.getInstrumentation().getUiAutomation()
+            .executeShellCommand("screencap -p /sdcard/Download/" + name);
+            java.io.InputStream output = new android.os.ParcelFileDescriptor.AutoCloseInputStream(capture)) {
+            byte[] buffer = new byte[1024]; while (output.read(buffer) != -1) { }
+        }
+    }
+
     @Test public void serverFormFitsRealKeyboardAndSystemBars() throws Exception {
         try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
             assertOverviewRendered(activity);
@@ -126,6 +136,7 @@ public class PreviewSmokeTest {
             evaluate(activity, "document.querySelector('.endpoint-sidebar-header button').click()");
             awaitJS(activity, "!!document.querySelector('.modal input[type=url]')");
             assertEquals("true", evaluate(activity, "document.activeElement.tagName !== 'INPUT'"));
+            int fullHeight = Integer.parseInt(evaluate(activity, "innerHeight"));
             activity.onActivity(screen -> {
                 WebView web = findWebView(screen.findViewById(android.R.id.content));
                 web.requestFocus();
@@ -140,6 +151,10 @@ public class PreviewSmokeTest {
                 Thread.sleep(200);
             }
             assertTrue("Real soft keyboard did not open", visible);
+            // isVisible(IME) becomes true BEFORE WebView/CSS completes resizing.
+            // Assertions against the old innerHeight give a false pass.
+            awaitJS(activity, "innerHeight < " + (fullHeight - 100));
+            Thread.sleep(600);
             awaitJS(activity, "(() => { const input=document.querySelector('.modal input[type=url]').getBoundingClientRect(); const save=document.querySelector('.modal button[type=submit]').getBoundingClientRect(); return input.top >= 0 && input.bottom <= innerHeight && save.top >= 0 && save.bottom <= innerHeight; })()");
             activity.onActivity(screen -> {
                 View decor = screen.getWindow().getDecorView();
@@ -151,11 +166,7 @@ public class PreviewSmokeTest {
                 assertTrue("WebView overlaps status bar", location[1] >= bars.top);
                 assertTrue("WebView overlaps keyboard", location[1] + web.getHeight() <= decor.getHeight() - Math.max(bars.bottom, ime.bottom));
             });
-            try (android.os.ParcelFileDescriptor capture = InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                .executeShellCommand("screencap -p /sdcard/Download/headscale-keyboard.png");
-                java.io.InputStream output = new android.os.ParcelFileDescriptor.AutoCloseInputStream(capture)) {
-                byte[] buffer = new byte[1024]; while (output.read(buffer) != -1) { }
-            }
+            captureScreen("headscale-keyboard.png");
             // Native Back is handled by the sheet once the IME has dismissed.
             evaluate(activity, "window.dispatchEvent(new Event('headscale:back',{cancelable:true}))");
             awaitJS(activity, "!document.querySelector('.modal')");
