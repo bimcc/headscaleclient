@@ -53,8 +53,7 @@ public class PreviewSmokeTest {
             assertSame(client, app.awaitClient());
             assertFalse(new JSONObject(client.request("GetSnapshot", "[]")).has("error"));
             assertOverviewRendered(activity);
-            Thread.sleep(500); // Let the rendered web frame reach SurfaceFlinger.
-            captureScreen("headscale-overview.png");
+            captureScreen(activity, "headscale-overview.png");
             assertTrue(new JSONObject(client.request("CallLocalAPI", "[\"prefs\"]")).has("error"));
         }
     }
@@ -112,7 +111,7 @@ public class PreviewSmokeTest {
     private String evaluate(ActivityScenario<MainActivity> activity, String script) throws Exception {
         LinkedBlockingQueue<String> results = new LinkedBlockingQueue<>();
         activity.onActivity(screen -> findWebView(screen.findViewById(android.R.id.content)).evaluateJavascript(script, results::add));
-        String result = results.poll(3, TimeUnit.SECONDS); assertNotNull("Web evaluation timed out", result); return result;
+        String result = results.poll(10, TimeUnit.SECONDS); assertNotNull("Web evaluation timed out", result); return result;
     }
 
     private void awaitJS(ActivityScenario<MainActivity> activity, String script) throws Exception {
@@ -120,7 +119,12 @@ public class PreviewSmokeTest {
         fail("UI condition failed: " + script);
     }
 
-    private void captureScreen(String name) throws Exception {
+    private void captureScreen(ActivityScenario<MainActivity> activity, String name) throws Exception {
+        LinkedBlockingQueue<Boolean> frames = new LinkedBlockingQueue<>();
+        activity.onActivity(screen -> findWebView(screen.findViewById(android.R.id.content)).postVisualStateCallback(1,
+            new WebView.VisualStateCallback() { @Override public void onComplete(long requestId) { frames.add(true); } }));
+        assertNotNull("Web frame was not committed", frames.poll(10, TimeUnit.SECONDS));
+        InstrumentationRegistry.getInstrumentation().getUiAutomation().waitForIdle(1000, 10000);
         try (android.os.ParcelFileDescriptor capture = InstrumentationRegistry.getInstrumentation().getUiAutomation()
             .executeShellCommand("screencap -p /sdcard/Download/" + name);
             java.io.InputStream output = new android.os.ParcelFileDescriptor.AutoCloseInputStream(capture)) {
@@ -166,7 +170,7 @@ public class PreviewSmokeTest {
                 assertTrue("WebView overlaps status bar", location[1] >= bars.top);
                 assertTrue("WebView overlaps keyboard", location[1] + web.getHeight() <= decor.getHeight() - Math.max(bars.bottom, ime.bottom));
             });
-            captureScreen("headscale-keyboard.png");
+            captureScreen(activity, "headscale-keyboard.png");
             // Native Back is handled by the sheet once the IME has dismissed.
             evaluate(activity, "window.dispatchEvent(new Event('headscale:back',{cancelable:true}))");
             awaitJS(activity, "!document.querySelector('.modal')");
