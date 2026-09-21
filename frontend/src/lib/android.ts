@@ -1,4 +1,5 @@
 import type { AppSnapshot, BackendBindings, HeadscaleBackend } from "./contracts";
+import { androidErrorMessage } from "./androidError";
 
 interface AndroidHost {
   postMessage(message: string): void;
@@ -20,7 +21,7 @@ export function androidCall<T>(method: string, args: unknown[] = []): Promise<T>
         const { id, response } = JSON.parse(event.data);
         const request = pending.get(id); if (!request) return;
         clearTimeout(request.timer); pending.delete(id);
-        if (response.error) request.reject(new Error(response.error)); else request.resolve(response.result);
+        if (response.error) request.reject(new Error(androidErrorMessage(response.problem, response.error))); else request.resolve(response.result);
       } catch { /* A malformed response cannot complete another operation. */ }
     };
   }
@@ -62,7 +63,7 @@ export function androidSubscribe(getSnapshot: () => Promise<AppSnapshot>): Heads
         if (gap) { refresh(); return; }
       }
       if ((name === "app:snapshot-changed" || name === "app:login-finished") && payload.snapshot) onSnapshot(payload.snapshot);
-      if (name === "app:operation-failed") onError(payload.problem?.message ?? "Android operation failed");
+      if (name === "app:operation-failed") onError(androidErrorMessage(payload.problem));
     };
     window.addEventListener("headscale:native", listener);
     window.addEventListener("headscale:resume", refresh);

@@ -79,11 +79,11 @@ function EndpointDialog({
       <form className="form-stack" onSubmit={submit}>
         <label>
           <span>{t("endpoint.name")}</span>
-          <input required value={name} onChange={(event) => setName(event.target.value)} placeholder={t("endpoint.namePlaceholder")} autoFocus />
+          <input required value={name} onChange={(event) => setName(event.target.value)} placeholder={t("endpoint.namePlaceholder")} autoFocus={!window.HeadscaleAndroid} enterKeyHint="next" />
         </label>
         <label>
           <span>{t("endpoint.address")}</span>
-          <input required type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://headscale.example.com" />
+          <input required type="url" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://headscale.example.com" />
         </label>
         <label>
           <span>{t("endpoint.type")}</span>

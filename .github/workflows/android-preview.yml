@@ -56,7 +56,15 @@ jobs:
       - name: Build APK with embedded network core
         env:
           USE_CACHED_CORE: ${{ steps.core-cache.outputs.cache-hit == 'true' && '1' || '0' }}
-        run: bash mobile/android/build-preview.sh
+          HEADSCALE_ANDROID_KEYSTORE_BASE64: ${{ secrets.HEADSCALE_ANDROID_KEYSTORE_BASE64 }}
+          HEADSCALE_ANDROID_KEY_PASSWORD: ${{ secrets.HEADSCALE_ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$HEADSCALE_ANDROID_KEYSTORE_BASE64" && test -n "$HEADSCALE_ANDROID_KEY_PASSWORD"
+          export HEADSCALE_ANDROID_KEYSTORE="$RUNNER_TEMP/headscaleclient.p12"
+          umask 077
+          printf '%s' "$HEADSCALE_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$HEADSCALE_ANDROID_KEYSTORE"
+          echo "HEADSCALE_ANDROID_KEYSTORE=$HEADSCALE_ANDROID_KEYSTORE" >> "$GITHUB_ENV"
+          bash mobile/android/build-preview.sh
       - name: Cache compiled core even when Java or lint fails
         if: always() && steps.core-cache.outputs.cache-hit != 'true' && hashFiles('mobile/android/app/libs/engine.aar') != ''
         uses: actions/cache/save@v4
@@ -70,6 +78,8 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Verify embedded core and Activity lifecycle on Android
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          HEADSCALE_ANDROID_KEY_PASSWORD: ${{ secrets.HEADSCALE_ANDROID_KEY_PASSWORD }}
         with:
           api-level: 35
           arch: x86_64
@@ -86,3 +96,6 @@ jobs:
             mobile/android/app/build/reports/
             mobile/android/app/build/outputs/androidTest-results/
           if-no-files-found: warn
+      - name: Remove temporary keystore
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/headscaleclient.p12"

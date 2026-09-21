@@ -210,6 +210,11 @@ Legend: `[ ]` pending, `[>]` in progress, `[x]` complete, `[!]` blocked.
 - [>] AND-005 Emulator native startup, authorized foreground service, Activity recreation and disconnect passed; permission denial and real OS VPN revocation remain.
 - [ ] AND-006 Honor real-phone login, peer connectivity, background, network handover and Clash proxy acceptance.
 - [ ] AND-007 Production signing, stable update identity and distribution review.
+- [>] AND-008 Fix Honor keyboard/system-bar overlap, official login notification
+  subscription and narrow-screen forms; emulator and rebuilt APK acceptance pending.
+- [>] AND-009 Persist Android update signing and keep one package ID; configure CI
+  secrets and verify replacement installation. Android.1 debug-signer migration is
+  a one-time reinstall with local data loss.
 
 See [Android preview](product/ANDROID.md). These tasks do not imply stable Android support.
 See [Android verification](verification/ANDROID-PREVIEW-2026-09-21.md) for the APK hash,

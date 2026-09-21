@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/tailscale/tailscale-android/libtailscale"
+	"tailscale.com/ipn"
 )
 
 type transport struct {
@@ -122,6 +123,11 @@ func (n *notificationStream) OnNotify(data []byte) error {
 func (t *transport) watch(req *http.Request) (*http.Response, error) {
 	mask, err := strconv.Atoi(req.URL.Query().Get("mask"))
 	if err != nil {
+		return nil, err
+	}
+	// Match LocalAPI's synchronous validation so the adapter can fall back
+	// before receiving a seemingly successful stream with an error notification.
+	if err := ipn.ValidateNotifyWatchOpt(ipn.NotifyWatchOpt(mask)); err != nil {
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(req.Context())

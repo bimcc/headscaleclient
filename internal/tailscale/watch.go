@@ -25,8 +25,10 @@ const preferredWatchMask = ipn.NotifyInitialState |
 	ipn.NotifyInitialPrefs |
 	ipn.NotifyInitialStatus |
 	ipn.NotifyPeerPatches |
-	ipn.NotifyNoNetMap |
-	ipn.NotifyRateLimit
+	ipn.NotifyNoNetMap
+
+// New-style peer patches must not be rate-limited: dropping a patch would make
+// the subscriber's state incomplete.
 
 func (a *Adapter) Watch(ctx context.Context, handle func(Event)) error {
 	watcher, err := a.openWatcher(ctx)

@@ -11,10 +11,17 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.os.Build;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import engine.Client;
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -78,14 +85,102 @@ public class PreviewSmokeTest {
             LinkedBlockingQueue<String> results = new LinkedBlockingQueue<>();
             activity.onActivity(screen -> {
                 FrameLayout root = screen.findViewById(android.R.id.content);
-                if (!(root.getChildAt(0) instanceof WebView)) { results.add("WebView unavailable"); return; }
-                ((WebView)root.getChildAt(0)).evaluateJavascript("document.body.innerText", results::add);
+                WebView web = findWebView(root);
+                if (web == null) { results.add("WebView unavailable"); return; }
+                web.evaluateJavascript("document.body.innerText", results::add);
             });
             text = results.poll(2, TimeUnit.SECONDS);
             if (text != null && text.contains("概览") && text.contains("网络与账号")) return;
             Thread.sleep(500);
         }
         fail("Shared UI did not render native overview: " + text);
+    }
+
+    private static WebView findWebView(View view) {
+        if (view instanceof WebView) return (WebView)view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup)view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                WebView web = findWebView(group.getChildAt(i)); if (web != null) return web;
+            }
+        }
+        return null;
+    }
+
+    private String evaluate(ActivityScenario<MainActivity> activity, String script) throws Exception {
+        LinkedBlockingQueue<String> results = new LinkedBlockingQueue<>();
+        activity.onActivity(screen -> findWebView(screen.findViewById(android.R.id.content)).evaluateJavascript(script, results::add));
+        String result = results.poll(3, TimeUnit.SECONDS); assertNotNull("Web evaluation timed out", result); return result;
+    }
+
+    private void awaitJS(ActivityScenario<MainActivity> activity, String script) throws Exception {
+        for (int i = 0; i < 40; i++) { if ("true".equals(evaluate(activity, script))) return; Thread.sleep(200); }
+        fail("UI condition failed: " + script);
+    }
+
+    @Test public void serverFormFitsRealKeyboardAndSystemBars() throws Exception {
+        try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
+            assertOverviewRendered(activity);
+            evaluate(activity, "document.querySelectorAll('.navigation-items button')[2].click()");
+            awaitJS(activity, "!!document.querySelector('.endpoint-sidebar-header button')");
+            evaluate(activity, "document.querySelector('.endpoint-sidebar-header button').click()");
+            awaitJS(activity, "!!document.querySelector('.modal input[type=url]')");
+            assertEquals("true", evaluate(activity, "document.activeElement.tagName !== 'INPUT'"));
+            activity.onActivity(screen -> {
+                WebView web = findWebView(screen.findViewById(android.R.id.content));
+                web.requestFocus();
+                web.evaluateJavascript("document.querySelector('.modal input[type=url]').focus()", ignored ->
+                    ((InputMethodManager)screen.getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(web, InputMethodManager.SHOW_IMPLICIT));
+            });
+            boolean visible = false;
+            for (int attempt = 0; attempt < 40; attempt++) {
+                LinkedBlockingQueue<Boolean> state = new LinkedBlockingQueue<>();
+                activity.onActivity(screen -> state.add(ViewCompat.getRootWindowInsets(screen.getWindow().getDecorView()).isVisible(WindowInsetsCompat.Type.ime())));
+                if (Boolean.TRUE.equals(state.poll(2, TimeUnit.SECONDS))) { visible = true; break; }
+                Thread.sleep(200);
+            }
+            assertTrue("Real soft keyboard did not open", visible);
+            awaitJS(activity, "(() => { const input=document.querySelector('.modal input[type=url]').getBoundingClientRect(); const save=document.querySelector('.modal button[type=submit]').getBoundingClientRect(); return input.top >= 0 && input.bottom <= innerHeight && save.top >= 0 && save.bottom <= innerHeight; })()");
+            activity.onActivity(screen -> {
+                View decor = screen.getWindow().getDecorView();
+                WebView web = findWebView(screen.findViewById(android.R.id.content));
+                WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(decor);
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                int[] location = new int[2]; web.getLocationInWindow(location);
+                assertTrue("WebView overlaps status bar", location[1] >= bars.top);
+                assertTrue("WebView overlaps keyboard", location[1] + web.getHeight() <= decor.getHeight() - Math.max(bars.bottom, ime.bottom));
+            });
+            try (android.os.ParcelFileDescriptor capture = InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .executeShellCommand("screencap -p /sdcard/Download/headscale-keyboard.png");
+                java.io.InputStream output = new android.os.ParcelFileDescriptor.AutoCloseInputStream(capture)) {
+                byte[] buffer = new byte[1024]; while (output.read(buffer) != -1) { }
+            }
+            // Native Back is handled by the sheet once the IME has dismissed.
+            evaluate(activity, "window.dispatchEvent(new Event('headscale:back',{cancelable:true}))");
+            awaitJS(activity, "!document.querySelector('.modal')");
+            awaitJS(activity, "(() => { const header=document.querySelector('.endpoint-accounts .section-header'); const badge=header.querySelector('.status-badge'); return badge.getBoundingClientRect().right <= innerWidth && document.documentElement.scrollWidth <= innerWidth; })()");
+        }
+    }
+
+    @Test public void officialLoginReturnsBrowserURLFromEmbeddedCore() throws Exception {
+        ClientApplication app = ApplicationProvider.getApplicationContext();
+        Client client = app.awaitClient();
+        JSONObject snapshot = new JSONObject(client.request("GetSnapshot", "[]")).getJSONObject("result");
+        JSONArray endpoints = snapshot.getJSONArray("endpoints"); String endpointId = null;
+        for (int i = 0; i < endpoints.length(); i++) {
+            JSONObject endpoint = endpoints.getJSONObject(i);
+            if ("tailscale".equals(endpoint.getString("kind"))) endpointId = endpoint.getString("id");
+        }
+        assertNotNull("Built-in official endpoint", endpointId);
+        try {
+            JSONObject response = new JSONObject(client.request("BeginLogin", new JSONArray().put(endpointId).toString()));
+            // Never log the token-bearing authentication URL.
+            assertFalse("Official login failed: " + response.optString("error"), response.has("error"));
+            Uri url = Uri.parse(response.getJSONObject("result").getString("authUrl"));
+            assertEquals("https", url.getScheme()); assertEquals("login.tailscale.com", url.getHost());
+            assertTrue(url.getPath().length() > 1);
+        } finally { client.request("SetConnection", "[false]"); }
     }
 
     @Test public void identitiesAreEncryptedAndBoundToTheirKey() throws Exception {

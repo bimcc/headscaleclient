@@ -17,6 +17,17 @@ describe("Android bridge", () => {
     const request = androidCall("SetConnection", [true]); const rejected = expect(request).rejects.toThrow();
     await vi.advanceTimersByTimeAsync(90001); await rejected;
   });
+  it("localizes structured native errors without exposing internal causes", async () => {
+    document.documentElement.lang = "zh-CN";
+    let id = "";
+    window.HeadscaleAndroid = { postMessage: (raw) => { id = JSON.parse(raw).id; } };
+    const request = androidCall("BeginLogin", ["endpoint-tailscale"]);
+    const rejected = expect(request).rejects.toThrow("应用内网络服务通信异常");
+    window.HeadscaleAndroid.onmessage!({ data: JSON.stringify({ id, response: {
+      error: "unsupported response", problem: { code: "daemon-incompatible", message: "unsupported response" },
+    } }) });
+    await rejected;
+  });
   it("refreshes on foreground return and stops listening when unmounted", async () => {
     const getSnapshot = vi.fn().mockResolvedValue({ source: "native" }); const onSnapshot = vi.fn();
     const stop = androidSubscribe(getSnapshot)(onSnapshot, vi.fn());

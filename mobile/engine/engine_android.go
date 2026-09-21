@@ -46,7 +46,7 @@ func Start(dataDir string, appContext libtailscale.AppContext, events Events) (*
 		service, err := application.NewService(daemon, store,
 			application.EventSinkFunc(func(name string, payload any) { client.emit(name, payload) }),
 			application.WithDaemonLifecycle(embeddedLifecycle{}),
-			application.WithDiagnostics("0.2.1-android.1", "native Android host", "embedded LocalAPI", "android"))
+			application.WithDiagnostics("0.2.1-android.2", "native Android host", "embedded LocalAPI", "android"))
 		if err != nil {
 			startErr = err
 			return
@@ -73,7 +73,8 @@ func (c *Client) emit(name string, value any) {
 func (c *Client) Request(method, arguments string) string {
 	value, err := bridge.Call(c.service, method, arguments)
 	if err != nil {
-		data, _ := json.Marshal(map[string]any{"error": err.Error()})
+		problem := domain.ProblemFromError(err)
+		data, _ := json.Marshal(map[string]any{"error": problem.Message, "problem": problem})
 		return string(data)
 	}
 	data, err := json.Marshal(map[string]any{"result": value})

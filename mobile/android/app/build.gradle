@@ -6,12 +6,31 @@ android {
         applicationId 'com.bimcc.headscaleclient.preview'
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '0.2.1-android.1'
+        versionCode 2
+        versionName '0.2.1-android.2'
         ndk { abiFilters 'arm64-v8a', 'x86_64' }
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
-    buildTypes { debug { debuggable true }; release { minifyEnabled false } }
+    // All distributed previews keep the same package ID and persisted signer.
+    // An unsigned local developer build can still use Android's debug identity.
+    signingConfigs {
+        if (System.getenv('HEADSCALE_ANDROID_KEYSTORE')) {
+            preview {
+                storeFile file(System.getenv('HEADSCALE_ANDROID_KEYSTORE'))
+                storeType 'PKCS12'
+                storePassword System.getenv('HEADSCALE_ANDROID_KEY_PASSWORD')
+                keyAlias 'headscaleclient'
+                keyPassword System.getenv('HEADSCALE_ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            debuggable true
+            if (System.getenv('HEADSCALE_ANDROID_KEYSTORE')) signingConfig signingConfigs.preview
+        }
+        release { minifyEnabled false }
+    }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     packaging { jniLibs { useLegacyPackaging false } }
     sourceSets.main.res.srcDir layout.buildDirectory.dir('generated/preview-icons')
@@ -25,6 +44,7 @@ tasks.register('copyPreviewIcon', Copy) {
 tasks.named('preBuild') { dependsOn 'copyPreviewIcon' }
 dependencies {
     implementation files('libs/engine.aar')
+    implementation 'androidx.core:core:1.15.0'
     implementation 'androidx.webkit:webkit:1.12.1'
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test:rules:1.6.1'

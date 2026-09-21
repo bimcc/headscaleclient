@@ -9,6 +9,12 @@ import (
 	"tailscale.com/ipn"
 )
 
+func TestPreferredWatchMaskAcceptedByPinnedCore(t *testing.T) {
+	if err := ipn.ValidateNotifyWatchOpt(preferredWatchMask); err != nil {
+		t.Fatalf("login and background subscription rejected by Tailscale: %v", err)
+	}
+}
+
 type watchFallbackDaemon struct {
 	*loginTestDaemon
 	masks []ipn.NotifyWatchOpt

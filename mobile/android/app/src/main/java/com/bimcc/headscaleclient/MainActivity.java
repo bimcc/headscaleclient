@@ -8,6 +8,11 @@ import android.os.*;
 import android.view.View;
 import android.webkit.*;
 import android.widget.TextView;
+import android.widget.FrameLayout;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.webkit.*;
 import org.json.*;
 import java.io.ByteArrayInputStream;
@@ -22,6 +27,7 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
     private Runnable afterPermission;
     private Runnable deniedPermission;
     private boolean destroyed;
+    private android.window.OnBackInvokedCallback backCallback;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final AtomicInteger pending = new AtomicInteger();
 
@@ -99,18 +105,38 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
                 } else execute.run();
             } catch (Exception ignored) { /* Invalid bridge envelopes have no authority. */ }
         });
-        setContentView(web);
-        // API 35 edge-to-edge: keep web controls outside status/navigation bars.
-        web.setOnApplyWindowInsetsListener((view, insets) -> {
-            view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
-            return insets;
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        FrameLayout viewport = new FrameLayout(this);
+        viewport.setBackgroundColor(android.graphics.Color.rgb(247, 249, 249));
+        viewport.addView(web, new FrameLayout.LayoutParams(-1, -1));
+        setContentView(viewport);
+        // Resize the WebView's actual content box. WebView padding does not
+        // constrain CSS fixed controls, and adjustResize alone is insufficient
+        // with Android 15's enforced edge-to-edge window.
+        ViewCompat.setOnApplyWindowInsetsListener(viewport, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            view.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, ime.bottom));
+            return WindowInsetsCompat.CONSUMED;
         });
+        ViewCompat.requestApplyInsets(viewport);
+        if (Build.VERSION.SDK_INT >= 33) {
+            backCallback = this::handleBack;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
+        }
         web.loadUrl(ORIGIN + "/index.html");
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
             requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
     }
 
     static boolean trusted(Uri uri) { return "https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost()) && uri.getPort() == -1 && uri.getUserInfo() == null; }
+    @Override public void onBackPressed() { handleBack(); }
+    private void handleBack() {
+        if (web == null) { moveTaskToBack(true); return; }
+        web.evaluateJavascript("!window.dispatchEvent(new Event('headscale:back',{cancelable:true}))", handled -> {
+            if (!destroyed && !"true".equals(handled)) moveTaskToBack(true);
+        });
+    }
     private boolean openBrowser(String url) {
         Uri uri = Uri.parse(url);
         if (!"https".equals(uri.getScheme()) || uri.getHost() == null || uri.getUserInfo() != null) return false;
@@ -141,6 +167,7 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
     @Override protected void onDestroy() {
         destroyed = true; app.listeners.remove(this); afterPermission = null; deniedPermission = null;
         main.removeCallbacksAndMessages(null);
+        if (Build.VERSION.SDK_INT >= 33 && backCallback != null) getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
         if (web != null) { WebViewCompat.removeWebMessageListener(web,"HeadscaleAndroid"); web.destroy(); }
         // Deliberately leave the Application's Go runtime and VPN service alive.
         super.onDestroy();

@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { AlertCircle, Inbox, LoaderCircle } from "lucide-react";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { useI18n } from "../lib/i18n";
 
 export type Tone = "neutral" | "success" | "warning" | "danger";
@@ -144,9 +144,53 @@ export function Modal({
   onClose: () => void;
 }) {
   const { t } = useI18n();
+  const dialog = useRef<HTMLElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const element = dialog.current;
+    if (!element) return;
+    if (!element.contains(document.activeElement)) element.focus();
+    const back = (event: Event) => { event.preventDefault(); close.current(); };
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") back(event);
+      if (event.key !== "Tab") return;
+      const controls = [...element.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]')];
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === element)) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === element)) { event.preventDefault(); first?.focus(); }
+    };
+    // The native container resizes on IME changes; bring the active field back
+    // into view after layout, even when the keyboard changes height mid-entry.
+    let frame = 0;
+    const reveal = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && element.contains(active) && active.matches("input, select, textarea")) {
+          active.scrollIntoView?.({ block: "nearest" });
+        }
+      });
+    };
+    window.addEventListener("headscale:back", back);
+    window.addEventListener("keydown", keyboard);
+    window.addEventListener("resize", reveal);
+    window.visualViewport?.addEventListener("resize", reveal);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("headscale:back", back);
+      window.removeEventListener("keydown", keyboard);
+      window.removeEventListener("resize", reveal);
+      window.visualViewport?.removeEventListener("resize", reveal);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
+        ref={dialog}
+        tabIndex={-1}
         className="modal"
         role="dialog"
         aria-modal="true"

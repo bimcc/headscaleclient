@@ -26,6 +26,6 @@ wireguard_dir="$(go list -m -f '{{.Dir}}' github.com/tailscale/wireguard-go)"
 cp "$wireguard_dir/LICENSE" android/app/src/main/assets/licenses/WIREGUARD-GO-LICENSE.txt
 gradle -p android --no-daemon assembleDebug lintDebug
 mkdir -p ../bin/android-preview
-cp android/app/build/outputs/apk/debug/app-debug.apk ../bin/android-preview/headscaleclient-0.2.1-android.1.apk
-"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose ../bin/android-preview/headscaleclient-0.2.1-android.1.apk
-sha256sum ../bin/android-preview/headscaleclient-0.2.1-android.1.apk
+cp android/app/build/outputs/apk/debug/app-debug.apk ../bin/android-preview/headscaleclient-0.2.1-android.2.apk
+"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs ../bin/android-preview/headscaleclient-0.2.1-android.2.apk
+sha256sum ../bin/android-preview/headscaleclient-0.2.1-android.2.apk

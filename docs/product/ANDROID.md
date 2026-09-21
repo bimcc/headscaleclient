@@ -51,11 +51,26 @@ bash mobile/android/build-preview.sh
 
 On Windows, use the Dockerfile in mobile/android or the Android preview GitHub
 Actions workflow. The latter stores an APK as a build artifact without creating
-a GitHub Release. Output: `bin/android-preview/headscaleclient-0.2.1-android.1.apk`.
-This package uses debug signing and a separate `.preview` application ID.
-Debug keys may differ across build machines: upgrades need the same signing key,
-otherwise uninstalling loses app-local accounts/settings. Stable signing is
-required before distributing production Android updates.
+a GitHub Release. Output: `bin/android-preview/headscaleclient-0.2.1-android.2.apk`.
+Distributed previews from android.2 use a persisted PKCS12 signing identity in
+GitHub Actions secrets. The application ID remains `com.bimcc.headscaleclient.preview`
+and versionCode increases for every delivery, so updates replace the app and retain
+data. Never add a version suffix to the application ID or regenerate its key.
+The original android.1 used an ephemeral debug signer: it cannot be updated with
+the new identity. A one-time uninstall/reinstall may be required and removes local
+accounts/settings. This package is still debuggable and is not a production release.
+
+Signing secrets: `HEADSCALE_ANDROID_KEYSTORE_BASE64` and
+`HEADSCALE_ANDROID_KEY_PASSWORD`. A local encrypted backup resides outside Git in
+`%LOCALAPPDATA%/BIMCC/Signing/Android`; `password.dpapi` is readable only by the
+generating Windows user. Back up the keystore AND its password securely before
+moving computers. CI must fail instead of silently falling back to a new debug key.
+
+Android.2 fixes the invalid LocalAPI notification mask shared with desktop clients,
+resizes the WebView for system bars and the IME, keeps server forms scrollable,
+and maps structured runtime errors to the selected interface language. Emulator
+acceptance includes an actual soft keyboard and an unauthenticated official
+Tailscale login URL request; successful account authentication still requires a user.
 
 Local builds recompile the Go core. Only CI opts into a cached AAR after checking
 its key against the native sources and dependency locks. Desktop Wails dependencies

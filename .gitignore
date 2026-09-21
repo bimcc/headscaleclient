@@ -17,3 +17,8 @@ mobile/android/**/build/
 mobile/android/app/libs/
 mobile/android/app/src/main/assets/
 mobile/android/local.properties
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.dpapi
