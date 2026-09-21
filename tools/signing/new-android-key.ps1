@@ -14,7 +14,7 @@ try {
     $config = Join-Path (Split-Path $openssl) '../ssl/openssl.cnf'
     & $openssl req -config $config -x509 -newkey rsa:3072 -sha256 -days 10000 -subj '/CN=BIMCC HeadscaleClient Android/O=BIMCC' -passout env:HEADSCALE_KEY_PASSWORD -keyout "$Directory\key.pem" -out "$Directory\certificate.pem" 2>$null
     if ($LASTEXITCODE -ne 0) { throw 'Android certificate generation failed.' }
-    & $openssl pkcs12 -export -name headscaleclient -inkey "$Directory\key.pem" -in "$Directory\certificate.pem" -passin env:HEADSCALE_KEY_PASSWORD -passout env:HEADSCALE_KEY_PASSWORD -out "$Directory\headscaleclient.p12"
+    & $openssl pkcs12 -export -name headscaleclient -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA256 -inkey "$Directory\key.pem" -in "$Directory\certificate.pem" -passin env:HEADSCALE_KEY_PASSWORD -passout env:HEADSCALE_KEY_PASSWORD -out "$Directory\headscaleclient.p12"
     if ($LASTEXITCODE -ne 0) { throw 'Android keystore export failed.' }
     $protected = ConvertTo-SecureString $env:HEADSCALE_KEY_PASSWORD -AsPlainText -Force | ConvertFrom-SecureString
     [IO.File]::WriteAllText("$Directory\password.dpapi", $protected)

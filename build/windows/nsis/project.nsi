@@ -33,6 +33,7 @@
 ####
 ## Include the wails tools
 ####
+!define UNINST_KEY_NAME "io.headscaleclient.desktop"
 !include "wails_tools.nsh"
 
 # The version information for this two must consist of 4 parts
@@ -52,6 +53,7 @@ ManifestDPIAware true
 !include "MUI.nsh"
 !include "LogicLib.nsh"
 !include "StrFunc.nsh"
+!include "TextFunc.nsh"
 
 ${Using:StrFunc} StrCase
 ${Using:StrFunc} StrStr
@@ -73,11 +75,12 @@ ${Using:StrFunc} StrStr
 !define MUI_LANGDLL_REGISTRY_KEY "${UNINST_KEY}"
 !define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
 !define INSTALL_VENDOR_DIRECTORY "BIMCC"
-!define LEGACY_INSTALL_DIRECTORY "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
+Var UpgradeInstallDir
 
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
 # !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
-!insertmacro MUI_PAGE_DIRECTORY # In which folder install page.
+!define MUI_PAGE_CUSTOMFUNCTION_PRE DirectoryPagePre
+!insertmacro MUI_PAGE_DIRECTORY # Existing products always upgrade in place.
 !insertmacro MUI_PAGE_INSTFILES # Installing page.
 !insertmacro MUI_PAGE_FINISH # Finished installation page.
 
@@ -92,6 +95,8 @@ LangString ArchitectureNotSupported ${LANG_SIMPCHINESE} "当前 Windows 架构�
 LangString ArchitectureNotSupported ${LANG_ENGLISH} "This product can't be installed on the current Windows architecture. Supports: ${ARCH}"
 LangString ExistingInstallPrompt ${LANG_SIMPCHINESE} "检测到已安装的 HeadscaleClient。继续将更新或修复现有安装，并保留账号与网络配置。是否继续？"
 LangString ExistingInstallPrompt ${LANG_ENGLISH} "HeadscaleClient is already installed. Continuing will update or repair the installation while preserving account and network configuration. Continue?"
+LangString UpgradeFailed ${LANG_SIMPCHINESE} "无法完成旧版本升级，请确认 HeadscaleClient 已完全退出后重试。详情：$1"
+LangString UpgradeFailed ${LANG_ENGLISH} "Could not upgrade the existing installation. Fully exit HeadscaleClient and retry. Details: $1"
 LangString ApplicationRunning ${LANG_SIMPCHINESE} "HeadscaleClient 仍在运行，安装程序无法更新正在使用的程序文件。请从系统托盘中的 HeadscaleClient 菜单选择“退出”（仅关闭窗口可能会缩小到托盘），确认程序完全退出后点击“重试”。"
 LangString ApplicationRunning ${LANG_ENGLISH} "HeadscaleClient is still running, so setup cannot update the application files in use. Choose Exit from the HeadscaleClient system tray menu (closing the window may only minimize it to the tray), then click Retry after the application has fully exited."
 LangString ServiceInstalling ${LANG_SIMPCHINESE} "正在安装 HeadscaleClient 托管网络服务"
@@ -143,12 +148,29 @@ Function .onInit
    !insertmacro MUI_LANGDLL_DISPLAY
    !insertmacro wails.checkArchitecture
    SetRegView 64
-   ReadRegStr $0 HKLM "${UNINST_KEY}" "UninstallString"
-   ${If} $0 != ""
+   InitPluginsDir
+   File /oname=$PLUGINSDIR\windows-upgrade.ps1 "..\..\..\tools\build\windows-upgrade.ps1"
+   nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\windows-upgrade.ps1" -Mode Discover'
+   Pop $0
+   Pop $1
+   ${If} $0 != 0
+       MessageBox MB_ICONSTOP "$(UpgradeFailed)"
+       Abort
+   ${EndIf}
+   ${TrimNewLines} $1 $UpgradeInstallDir
+   ${If} $UpgradeInstallDir != ""
+       StrCpy $INSTDIR $UpgradeInstallDir
        IfSilent continueExistingInstall 0
        MessageBox MB_ICONQUESTION|MB_OKCANCEL "$(ExistingInstallPrompt)" IDOK continueExistingInstall
        Abort
        continueExistingInstall:
+   ${EndIf}
+FunctionEnd
+
+Function DirectoryPagePre
+   ${If} $UpgradeInstallDir != ""
+       StrCpy $INSTDIR $UpgradeInstallDir
+       Abort
    ${EndIf}
 FunctionEnd
 
@@ -175,29 +197,26 @@ Section
         ${EndIf}
     ${EndIf}
 
+    ${If} $UpgradeInstallDir != ""
+        StrCpy $INSTDIR $UpgradeInstallDir
+    ${EndIf}
     SetOutPath $INSTDIR
+
+    nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\windows-upgrade.ps1" -Mode Prepare -InstallDirectory "$INSTDIR"'
+    Pop $0
+    Pop $1
+    ${If} $0 != 0
+        MessageBox MB_ICONSTOP "$(UpgradeFailed)"
+        Abort
+    ${EndIf}
     
     !insertmacro wails.files
 
     ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Services\Tailscale" "ImagePath"
-    StrCpy $2 '"${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe"'
-    StrCpy $3 '${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe'
     StrCpy $5 '"$INSTDIR\daemon\tailscaled.exe"'
     StrCpy $6 '$INSTDIR\daemon\tailscaled.exe'
     StrCpy $4 "0"
     ${If} $0 == ""
-        StrCpy $4 "1"
-    ${ElseIf} $0 == $2
-    ${OrIf} $0 == $3
-        DetailPrint "$(ServiceMigrating)"
-        nsExec::ExecToLog '"${LEGACY_INSTALL_DIRECTORY}\daemon\tailscaled.exe" uninstall-system-daemon'
-        Pop $1
-        ${If} $1 != 0
-            MessageBox MB_ICONSTOP "$(ServiceMigrationFailed)"
-            Abort
-        ${EndIf}
-        IfFileExists "${LEGACY_INSTALL_DIRECTORY}\uninstall.exe" 0 +2
-            ExecWait '"${LEGACY_INSTALL_DIRECTORY}\uninstall.exe" /S'
         StrCpy $4 "1"
     ${ElseIf} $0 == $5
     ${OrIf} $0 == $6
@@ -255,6 +274,15 @@ Section
     !insertmacro wails.associateCustomProtocols
     
     !insertmacro wails.writeUninstaller
+
+    WriteRegStr HKLM "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+    nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\windows-upgrade.ps1" -Mode Complete -InstallDirectory "$INSTDIR"'
+    Pop $0
+    Pop $1
+    ${If} $0 != 0
+        MessageBox MB_ICONSTOP "$(UpgradeFailed)"
+        Abort
+    ${EndIf}
 
     SetRegView 64
     ${If} $LANGUAGE == ${LANG_SIMPCHINESE}

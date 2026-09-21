@@ -1,12 +1,12 @@
 {
 	"fixed": {
-		"file_version": "0.2.1",
-		"product_version": "0.2.1"
+		"file_version": "0.2.2",
+		"product_version": "0.2.2"
 	},
 	"info": {
 		"0409": {
-			"FileVersion": "0.2.1",
-			"ProductVersion": "0.2.1",
+			"FileVersion": "0.2.2",
+			"ProductVersion": "0.2.2",
 			"CompanyName": "BIMCC., Ltd.",
 			"FileDescription": "Cross-platform client for Tailscale-compatible networks",
 			"LegalCopyright": "(c) 2026 BIMCC., Ltd.",

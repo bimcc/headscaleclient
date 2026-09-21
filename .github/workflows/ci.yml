@@ -125,6 +125,10 @@ jobs:
       - name: Test Go packages
         run: go test ./...
 
+      - name: Verify Windows single-install migration
+        if: runner.os == 'Windows'
+        run: ./tools/build/test-windows-upgrade.ps1
+
       - name: Vet Go packages
         run: go vet ./...
 
@@ -143,6 +147,24 @@ jobs:
               $info.CompanyName -ne 'BIMCC., Ltd.' -or $info.ProductName -ne 'HeadscaleClient') {
             throw "The built Windows executable has incomplete or incorrect version information: $info"
           }
+
+      - name: Verify Windows upgrade installer on disposable runner
+        if: runner.os == 'Windows'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          choco install nsis --yes --no-progress
+          ./tools/daemon/prepare-windows.ps1 -Architecture amd64 -OutputDirectory bin/daemon/windows-amd64
+          go tool wails3 generate webview2bootstrapper -dir build/windows/nsis
+          ./tools/build/invoke-makensis.ps1 -DaemonDirectory (Resolve-Path bin/daemon/windows-amd64) -ApplicationBinary (Resolve-Path bin/headscaleclient.exe) -ArchitectureFlag AMD64 -ProjectFile (Resolve-Path build/windows/nsis/project.nsi)
+          ./tools/build/verify-windows-upgrade.ps1
+
+      - name: Upload verified Windows installer
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: headscaleclient-windows-installer
+          path: bin/headscaleclient-amd64-installer.exe
 
       - name: Verify service-bearing Linux package
         if: runner.os == 'Linux'

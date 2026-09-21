@@ -63,6 +63,7 @@ jobs:
           export HEADSCALE_ANDROID_KEYSTORE="$RUNNER_TEMP/headscaleclient.p12"
           umask 077
           printf '%s' "$HEADSCALE_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$HEADSCALE_ANDROID_KEYSTORE"
+          keytool -list -storetype PKCS12 -keystore "$HEADSCALE_ANDROID_KEYSTORE" -storepass:env HEADSCALE_ANDROID_KEY_PASSWORD
           echo "HEADSCALE_ANDROID_KEYSTORE=$HEADSCALE_ANDROID_KEYSTORE" >> "$GITHUB_ENV"
           bash mobile/android/build-preview.sh
       - name: Cache compiled core even when Java or lint fails
