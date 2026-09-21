@@ -10,5 +10,11 @@ adb pull /sdcard/Download/headscale-keyboard.png bin/android-preview/emulator-ke
 adb install -r -g bin/android-preview/headscaleclient-0.2.1-android.2.apk
 adb shell am start -W -n com.bimcc.headscaleclient.preview/com.bimcc.headscaleclient.MainActivity
 sleep 3
+adb shell 'run-as com.bimcc.headscaleclient.preview sh -c "echo retained > files/upgrade-sentinel"'
+adb install -r -g bin/android-preview/headscaleclient-0.2.1-android.2.apk
+test "$(adb shell run-as com.bimcc.headscaleclient.preview cat files/upgrade-sentinel | tr -d '\r')" = retained
+test "$(adb shell pm list packages com.bimcc.headscaleclient | tr -d '\r')" = package:com.bimcc.headscaleclient.preview
+adb shell am start -W -n com.bimcc.headscaleclient.preview/com.bimcc.headscaleclient.MainActivity
+sleep 2
 adb exec-out screencap -p > bin/android-preview/emulator-overview.png
 adb shell dumpsys meminfo com.bimcc.headscaleclient.preview > bin/android-preview/emulator-memory.txt

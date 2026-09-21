@@ -161,7 +161,7 @@ describe("HeadscaleClient shell", () => {
 
     await user.click(screen.getByRole("button", { name: "About" }));
     expect(screen.getByRole("heading", { name: "HeadscaleClient" })).toBeInTheDocument();
-    expect(screen.getByText("Version 0.2.1-dev")).toBeInTheDocument();
+    expect(screen.getByText("Version 0.2.2-dev")).toBeInTheDocument();
     expect(screen.getByText("BIMCC., Ltd.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open the official Tailscale website at tailscale.com" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open the official Headscale website at headscale.net" })).toBeInTheDocument();
