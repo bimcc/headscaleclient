@@ -35,8 +35,10 @@ type Daemon interface {
 	PatchPreferences(context.Context, domain.PreferencePatch) (domain.Preferences, error)
 	Profiles(context.Context) (domain.ProfileCollection, error)
 	SwitchProfile(context.Context, string) error
+	RemoveProfile(context.Context, string) error
 	Logout(context.Context) error
 	BeginInteractiveLogin(context.Context, string) (string, error)
+	ReauthenticateProfile(context.Context, string) (string, error)
 	PingDevice(context.Context, string) (tailscale.PingResult, error)
 	Watch(context.Context, func(tailscale.Event)) error
 }
@@ -449,6 +451,13 @@ func (s *Service) SwitchProfile(profileID string) (AppSnapshot, error) {
 	})
 }
 
+func (s *Service) RemoveProfile(profileID string) (AppSnapshot, error) {
+	profileID = strings.TrimSpace(profileID)
+	return s.mutate("RemoveProfile", func(ctx context.Context) error {
+		return s.daemon.RemoveProfile(ctx, profileID)
+	})
+}
+
 func (s *Service) Logout() (AppSnapshot, error) {
 	return s.mutate("Logout", func(ctx context.Context) error {
 		return s.daemon.Logout(ctx)
@@ -456,31 +465,47 @@ func (s *Service) Logout() (AppSnapshot, error) {
 }
 
 func (s *Service) BeginLogin(endpointID string) (LoginResult, error) {
+	return s.beginLogin(endpointID, "")
+}
+
+func (s *Service) ReauthenticateProfile(endpointID, profileID string) (LoginResult, error) {
+	profileID = strings.TrimSpace(profileID)
+	if profileID == "" {
+		return LoginResult{}, domain.NewError(domain.ErrorInvalidArgument, "A profile ID is required for reauthentication.")
+	}
+	return s.beginLogin(endpointID, profileID)
+}
+
+func (s *Service) beginLogin(endpointID, reauthenticateProfileID string) (LoginResult, error) {
+	operation := "BeginLogin"
+	if reauthenticateProfileID != "" {
+		operation = "ReauthenticateProfile"
+	}
 	ctx, cancel := context.WithTimeout(s.serviceCtx, s.loginTimeout)
 	defer cancel()
 	if err := ctx.Err(); err != nil {
 		err = normalizeError(err, "Could not start login.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 
 	pending, err := s.reservePendingLogin(endpointID)
 	if err != nil {
 		err = normalizeError(err, "Could not start login.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 	if err := s.acquireMutation(ctx); err != nil {
 		s.clearPendingLogin(pending.sessionID)
 		err = normalizeError(err, "Could not start login.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 	defer s.releaseMutation()
 	if err := s.ensureDaemonAvailable(ctx); err != nil {
 		s.clearPendingLogin(pending.sessionID)
 		err = normalizeError(err, "Could not start the local network service.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 
@@ -488,23 +513,36 @@ func (s *Service) BeginLogin(endpointID string) (LoginResult, error) {
 	if err != nil {
 		s.clearPendingLogin(pending.sessionID)
 		err = normalizeError(err, "Could not start login.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
+	}
+	if reauthenticateProfileID != "" {
+		if err := s.validateReauthenticationTarget(ctx, endpoint, reauthenticateProfileID); err != nil {
+			s.clearPendingLogin(pending.sessionID)
+			err = normalizeError(err, "Could not reauthenticate this login identity.")
+			s.emitOperationFailed(operation, err)
+			return LoginResult{}, err
+		}
 	}
 	if endpoint.CustomCARef != "" {
 		s.clearPendingLogin(pending.sessionID)
 		err = domain.NewError(domain.ErrorUnsupported, "Custom CA login is not available in this build.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 	if err := s.endpointProbe.Probe(ctx, endpoint.BaseURL); err != nil {
 		s.clearPendingLogin(pending.sessionID)
 		err = normalizeError(err, "无法连接控制服务器。")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 
-	authURL, err := s.daemon.BeginInteractiveLogin(ctx, endpoint.BaseURL)
+	var authURL string
+	if reauthenticateProfileID != "" {
+		authURL, err = s.daemon.ReauthenticateProfile(ctx, endpoint.BaseURL)
+	} else {
+		authURL, err = s.daemon.BeginInteractiveLogin(ctx, endpoint.BaseURL)
+	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		s.clearPendingLogin(pending.sessionID)
 		if errors.Is(ctxErr, context.DeadlineExceeded) {
@@ -516,20 +554,20 @@ func (s *Service) BeginLogin(endpointID string) (LoginResult, error) {
 		} else {
 			err = normalizeError(ctxErr, "登录已取消。")
 		}
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 	if err != nil {
 		s.clearPendingLogin(pending.sessionID)
 		err = normalizeError(err, "Could not start login.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 	validatedURL, err := tailscale.ValidateLoginURL(authURL)
 	if err != nil {
 		s.clearPendingLogin(pending.sessionID)
 		err = normalizeError(err, "The local Tailscale service provided an invalid login URL.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 
@@ -540,10 +578,63 @@ func (s *Service) BeginLogin(endpointID string) (LoginResult, error) {
 			err = domain.NewError(domain.ErrorTimeout, "The login session expired before a login URL was received.").WithRetryable(true)
 		}
 		err = normalizeError(err, "Could not publish the login URL.")
-		s.emitOperationFailed("BeginLogin", err)
+		s.emitOperationFailed(operation, err)
 		return LoginResult{}, err
 	}
 	return LoginResult{EndpointID: endpoint.ID, AuthURL: validatedURL}, nil
+}
+
+func (s *Service) validateReauthenticationTarget(ctx context.Context, endpoint domain.ControlEndpoint, profileID string) error {
+	profiles, err := s.daemon.Profiles(ctx)
+	if err != nil {
+		return err
+	}
+	if profiles.ActiveID != profileID {
+		return domain.NewError(domain.ErrorPreconditionFailed, "Only the active login-required identity can be reauthenticated here.")
+	}
+	var profile *domain.ProfileSummary
+	for i := range profiles.Profiles {
+		if profiles.Profiles[i].ID == profileID {
+			profile = &profiles.Profiles[i]
+			break
+		}
+	}
+	if profile == nil {
+		return domain.NewError(domain.ErrorNotFound, "The login identity no longer exists on this device.")
+	}
+	raw, err := s.daemon.Snapshot(ctx)
+	if err != nil {
+		return err
+	}
+	if raw.State.Session != domain.SessionLoginRequired {
+		return domain.NewError(domain.ErrorPreconditionFailed, "This identity does not currently require login.")
+	}
+	if raw.ActiveProfile != nil && raw.ActiveProfile.ID != profileID {
+		return domain.NewError(domain.ErrorConflict, "The active login identity changed. Refresh and try again.")
+	}
+
+	belongsToEndpoint := true
+	hasProfileAssociation := false
+	if profile.EndpointID != "" {
+		hasProfileAssociation = true
+		belongsToEndpoint = belongsToEndpoint && profile.EndpointID == endpoint.ID
+	}
+	if profile.ControlURL != "" {
+		hasProfileAssociation = true
+		belongsToEndpoint = belongsToEndpoint && sameControlURL(profile.ControlURL, endpoint.BaseURL)
+	}
+	if !hasProfileAssociation && containsString(endpoint.DaemonProfileIDs, profileID) {
+		hasProfileAssociation = true
+		belongsToEndpoint = true
+	}
+	if !hasProfileAssociation && raw.ActiveEndpoint != nil {
+		hasProfileAssociation = true
+		belongsToEndpoint = sameControlURL(raw.ActiveEndpoint.BaseURL, endpoint.BaseURL)
+	}
+	if !hasProfileAssociation || !belongsToEndpoint {
+		return domain.NewError(domain.ErrorConflict, "The selected identity belongs to a different control server.")
+	}
+	return nil
 }
 
 func (s *Service) SetAppSetting(key AppSettingKey, value bool) (AppSnapshot, error) {

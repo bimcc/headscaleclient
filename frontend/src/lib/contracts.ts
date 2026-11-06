@@ -184,8 +184,10 @@ export interface HeadscaleBackend {
   saveEndpoint(input: EndpointInput): Promise<AppSnapshot>;
   deleteEndpoint(endpointId: string): Promise<AppSnapshot>;
   switchProfile(profileId: string): Promise<AppSnapshot>;
+  removeProfile(profileId: string): Promise<AppSnapshot>;
   logout(): Promise<AppSnapshot>;
   beginLogin(endpointId: string): Promise<LoginResult>;
+  reauthenticateProfile(endpointId: string, profileId: string): Promise<LoginResult>;
   setAppSetting(key: AppSettingKey, value: boolean): Promise<AppSnapshot>;
   setTheme(theme: ThemePreference): Promise<AppSnapshot>;
   setLanguage(language: LanguagePreference): Promise<AppSnapshot>;
@@ -206,8 +208,10 @@ export interface BackendBindings {
   SaveEndpoint(input: EndpointInput): Promise<AppSnapshot>;
   DeleteEndpoint(endpointId: string): Promise<AppSnapshot>;
   SwitchProfile(profileId: string): Promise<AppSnapshot>;
+  RemoveProfile(profileId: string): Promise<AppSnapshot>;
   Logout(): Promise<AppSnapshot>;
   BeginLogin(endpointId: string): Promise<LoginResult>;
+  ReauthenticateProfile(endpointId: string, profileId: string): Promise<LoginResult>;
   SetAppSetting(key: AppSettingKey, value: boolean): Promise<AppSnapshot>;
   SetTheme(theme: ThemePreference): Promise<AppSnapshot>;
   SetLanguage(language: LanguagePreference): Promise<AppSnapshot>;

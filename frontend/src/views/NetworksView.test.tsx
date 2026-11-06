@@ -47,8 +47,12 @@ function renderView(overrides: Partial<ComponentProps<typeof NetworksView>> = {}
     onSaveEndpoint: vi.fn(async () => undefined),
     onDeleteEndpoint: vi.fn(async () => undefined),
     onSwitchProfile: vi.fn(async () => undefined),
-    onLogout: vi.fn(async () => undefined),
+    onRemoveProfile: vi.fn(async () => undefined),
     onBeginLogin: vi.fn(async (endpointId) => ({
+      endpointId,
+      authUrl: "https://login.example.com/device",
+    })),
+    onReauthenticateProfile: vi.fn(async (endpointId) => ({
       endpointId,
       authUrl: "https://login.example.com/device",
     })),
@@ -115,20 +119,61 @@ describe("NetworksView", () => {
 
   it("explains reauthentication before removing the active local identity", async () => {
     const user = userEvent.setup();
-    const onLogout = vi.fn(async () => undefined);
-    renderView({ onLogout });
+    const onRemoveProfile = vi.fn(async () => undefined);
+    renderView({ onRemoveProfile });
 
     const profileRow = screen.getByText("个人网络").closest(".profile-row");
     expect(profileRow).not.toBeNull();
-    await user.click(within(profileRow as HTMLElement).getByRole("button", { name: "移除身份" }));
+    await user.click(within(profileRow as HTMLElement).getByRole("button", { name: "退出并移除" }));
 
-    expect(onLogout).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog", { name: "移除本机登录身份" })).toBeInTheDocument();
-    expect(screen.getByText(/下次连接必须重新打开浏览器认证/)).toBeInTheDocument();
+    expect(onRemoveProfile).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog", { name: "退出并移除本机登录身份" });
+    expect(screen.getByText(/下次使用需重新打开浏览器认证/)).toBeInTheDocument();
     expect(screen.getByText(/若只想暂时停用网络/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "确认移除" }));
+    await user.click(within(dialog).getByRole("button", { name: "退出并移除" }));
 
-    await waitFor(() => expect(onLogout).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onRemoveProfile).toHaveBeenCalledWith("profile-tailscale"));
+  });
+
+  it("offers in-place reauthentication for an active identity that needs login", async () => {
+    const user = userEvent.setup();
+    const onReauthenticateProfile = vi.fn(async (endpointId: string) => ({
+      endpointId,
+      authUrl: "https://login.example.com/reauth",
+    }));
+    const profile = { ...profiles[0]!, state: "login-required" as const };
+    renderView({ profiles: [profile], onReauthenticateProfile });
+
+    const profileRow = screen.getByText("个人网络").closest(".profile-row");
+    expect(profileRow).not.toBeNull();
+    await user.click(within(profileRow as HTMLElement).getByRole("button", { name: "重新登录" }));
+
+    await waitFor(() => expect(onReauthenticateProfile).toHaveBeenCalledWith("endpoint-tailscale", "profile-tailscale"));
+    expect(screen.getByRole("status")).toHaveTextContent("login.example.com/reauth");
+  });
+
+  it("removes an inactive saved identity without switching into it", async () => {
+    const user = userEvent.setup();
+    const inactiveProfile: LoginProfile = {
+      ...profiles[0]!,
+      id: "profile-old",
+      displayName: "旧身份",
+      account: "old@example.com",
+      active: false,
+      state: "ready",
+    };
+    const onRemoveProfile = vi.fn(async () => undefined);
+    const onSwitchProfile = vi.fn(async () => undefined);
+    renderView({ profiles: [...profiles, inactiveProfile], onRemoveProfile, onSwitchProfile });
+
+    const profileRow = screen.getByText("旧身份").closest(".profile-row");
+    expect(profileRow).not.toBeNull();
+    await user.click(within(profileRow as HTMLElement).getByRole("button", { name: "移除" }));
+    const dialog = screen.getByRole("dialog", { name: "移除本机登录身份" });
+    await user.click(within(dialog).getByRole("button", { name: "确认移除" }));
+
+    await waitFor(() => expect(onRemoveProfile).toHaveBeenCalledWith("profile-old"));
+    expect(onSwitchProfile).not.toHaveBeenCalled();
   });
 
   it("shows a persistent endpoint error and restores login after a failed probe", async () => {

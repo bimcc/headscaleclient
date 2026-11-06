@@ -7,6 +7,7 @@ service_root='/Library/Application Support/BIMCC/HeadscaleClient'
 plist='/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist'
 job='system/io.headscaleclient.tailscaled'
 socket='/var/run/headscaleclient-tailscaled.socket'
+log_root="$service_root/logs"
 
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 [ "$(id -u)" -eq 0 ] || fail '请使用管理员授权。 Administrator approval is required.'
@@ -38,11 +39,17 @@ case "${1:-}" in
   start)
     check_conflicts
     [ ! -L "$service_root/state" ] || fail 'Unsafe state directory.'
+    [ ! -L "$log_root" ] || fail 'Unsafe log directory.'
     if [ ! -d "$service_root/state" ]; then
       install -d -o root -g wheel -m 700 "$service_root/state"
     fi
+    if [ ! -d "$log_root" ]; then
+      install -d -o root -g wheel -m 700 "$log_root"
+    fi
     trusted "$service_root/state"
+    trusted "$log_root"
     chmod 700 "$service_root/state"
+    chmod 700 "$log_root"
     launchctl enable "$job"
     if ! launchctl print "$job" >/dev/null 2>&1; then
       launchctl bootstrap system "$plist"

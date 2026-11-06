@@ -24,7 +24,10 @@ type loginTestDaemon struct {
 	calls     []string
 	prefs     ipn.Prefs
 	bus       bus
+	current   ipn.LoginProfile
+	profiles  []ipn.LoginProfile
 	logoutErr error
+	deleteErr error
 }
 
 func (d *loginTestDaemon) Status(context.Context) (*ipnstate.Status, error) {
@@ -38,13 +41,17 @@ func (d *loginTestDaemon) EditPrefs(context.Context, *ipn.MaskedPrefs) (*ipn.Pre
 	return &d.prefs, nil
 }
 func (d *loginTestDaemon) ProfileStatus(context.Context) (ipn.LoginProfile, []ipn.LoginProfile, error) {
-	return ipn.LoginProfile{}, nil, nil
+	return d.current, d.profiles, nil
 }
 func (d *loginTestDaemon) SwitchToEmptyProfile(context.Context) error {
 	d.calls = append(d.calls, "empty-profile")
 	return nil
 }
 func (d *loginTestDaemon) SwitchProfile(context.Context, ipn.ProfileID) error { return nil }
+func (d *loginTestDaemon) DeleteProfile(_ context.Context, id ipn.ProfileID) error {
+	d.calls = append(d.calls, "delete-profile:"+string(id))
+	return d.deleteErr
+}
 func (d *loginTestDaemon) Logout(context.Context) error {
 	d.calls = append(d.calls, "logout")
 	return d.logoutErr
@@ -84,6 +91,43 @@ func TestBeginInteractiveLoginWatchesBeforeStarting(t *testing.T) {
 		"start:https://headscale.example",
 		"login",
 	}
+	if !reflect.DeepEqual(daemon.calls, wantCalls) {
+		t.Fatalf("calls = %#v, want %#v", daemon.calls, wantCalls)
+	}
+}
+
+func TestReauthenticateProfileKeepsCurrentProfile(t *testing.T) {
+	loginURL := "https://headscale.example/register/device"
+	profile := ipn.LoginProfile{ID: "profile-1"}
+	daemon := &loginTestDaemon{
+		current:  profile,
+		profiles: []ipn.LoginProfile{profile},
+		bus:      &loginTestBus{notify: ipn.Notify{BrowseToURL: &loginURL}},
+	}
+	adapter := newAdapterWithDaemon(daemon)
+
+	gotURL, err := adapter.ReauthenticateProfile(context.Background(), "https://headscale.example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotURL != loginURL {
+		t.Fatalf("login URL = %q, want %q", gotURL, loginURL)
+	}
+	wantCalls := []string{"watch", "prefs", "start:https://headscale.example", "login"}
+	if !reflect.DeepEqual(daemon.calls, wantCalls) {
+		t.Fatalf("calls = %#v, want %#v", daemon.calls, wantCalls)
+	}
+}
+
+func TestRemoveProfileDeletesAlreadyLoggedOutProfile(t *testing.T) {
+	profile := ipn.LoginProfile{ID: "profile-1"}
+	daemon := &loginTestDaemon{current: profile, profiles: []ipn.LoginProfile{profile}}
+	adapter := newAdapterWithDaemon(daemon)
+
+	if err := adapter.RemoveProfile(context.Background(), "profile-1"); err != nil {
+		t.Fatal(err)
+	}
+	wantCalls := []string{"logout", "delete-profile:profile-1"}
 	if !reflect.DeepEqual(daemon.calls, wantCalls) {
 		t.Fatalf("calls = %#v, want %#v", daemon.calls, wantCalls)
 	}

@@ -6,6 +6,7 @@ cd "$(dirname "$0")/../.."
 arch=${1:?Specify architecture}
 pkg="$PWD/bin/headscaleclient-macos-$arch-installer.pkg"
 service_root='/Library/Application Support/BIMCC/HeadscaleClient'
+log_root="$service_root/logs"
 socket='/var/run/headscaleclient-tailscaled.socket'
 cli="$service_root/daemon/tailscale"
 plist=/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist
@@ -31,6 +32,7 @@ sudo installer -showChoicesXML -pkg "$pkg" -target / > bin/macos-installer-choic
 plutil -lint bin/macos-installer-choices.xml
 sudo installer -pkg "$pkg" -target /
 test "$(cat "$service_root/installation-mode")" = managed
+sudo test -d "$log_root"
 verify_installed_version
 sudo "$cli" --socket="$socket" status --json | tee bin/macos-initial-status.json
 node -e 'const s=JSON.parse(require("fs").readFileSync("bin/macos-initial-status.json")); if(s.BackendState!=="NeedsLogin") throw Error("unexpected fresh state: "+s.BackendState)'

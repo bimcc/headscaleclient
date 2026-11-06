@@ -11,8 +11,9 @@ both modes, like the Windows installer. No external service is overwritten.
 - Windows-host Go test/vet: passed (platform-independent regression checks).
 - Frontend: all 65 tests and production build passed, including external macOS
   unavailable/unauthorized/incompatible guidance with no replacement action.
-- Installer policy: 7 Node tests passed for script configuration, fresh,
-  official, Homebrew, managed, conflicting and custom-socket UI hints.
+- Installer policy: 8 Node tests passed for script configuration, managed
+  native `utun`/isolated LocalAPI arguments, fresh, official, Homebrew,
+  managed, conflicting and custom-socket UI hints.
 - Shell syntax: preinstall/postinstall, policy, controller, uninstall, packaging
   and smoke scripts checked individually.
 - [Initial native run 35498840852](https://github.com/bimcc/headscaleclient/actions/runs/35498840852):

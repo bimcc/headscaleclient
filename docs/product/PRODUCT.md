@@ -59,12 +59,17 @@ The name describes the primary self-hosted use case, not a provider lock.
   the selected network.
 - Every endpoint exposes its own login/add-account action. The application
   never silently substitutes the current endpoint for the selected endpoint.
+- An active identity in `login-required` state exposes a separate
+  **Reauthenticate** action. It starts interactive authentication in that
+  existing daemon profile rather than creating a duplicate profile.
 - Login first performs a short control-server reachability check. DNS, TLS,
   timeout, and HTTP 5xx failures are shown against the selected endpoint and do
   not leave the daemon in a new empty profile.
-- Logout applies only to the active profile. It contacts that profile's control
-  server, disconnects it, and removes its local daemon profile after explicit
-  confirmation. Other saved profiles remain available.
+- Disconnecting the network preserves the login identity. Removing an identity
+  is a separate, explicit action: it tries to log out the active profile from
+  its control server, then explicitly deletes that local daemon profile. The
+  direct deletion is required because Tailscale's logout is a no-op if the
+  profile is already logged out. Other saved profiles remain available.
 
 ### First run
 

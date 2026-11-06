@@ -110,6 +110,29 @@ describe("HeadscaleClient shell", () => {
     expect(screen.queryByRole("button", { name: "安装网络服务" })).not.toBeInTheDocument();
   });
 
+  it("offers reauthentication directly from Overview when the active identity needs login", async () => {
+    const user = userEvent.setup();
+    const backend = createBackend();
+    const snapshot = createDemoSnapshot();
+    snapshot.runtime.daemon = "ready";
+    snapshot.runtime.session = "login-required";
+    snapshot.runtime.connection = "stopped";
+    snapshot.profiles.find((profile) => profile.id === snapshot.activeProfileId)!.state = "login-required";
+    vi.spyOn(backend, "getSnapshot").mockResolvedValue(snapshot);
+    const reauthenticate = vi.spyOn(backend, "reauthenticateProfile").mockResolvedValue({
+      endpointId: "endpoint-primary",
+      authUrl: "https://hs.example.com/login",
+    });
+    vi.spyOn(window, "open").mockImplementation(() => null);
+
+    render(<App backendClient={backend} />);
+
+    await user.click(await screen.findByRole("button", { name: "重新登录" }));
+
+    await waitFor(() => expect(reauthenticate).toHaveBeenCalledWith("endpoint-primary", "profile-team"));
+    expect(await screen.findByText("已打开浏览器，请完成登录")).toBeInTheDocument();
+  });
+
   it("allows close-to-tray behavior to be changed", async () => {
     const user = userEvent.setup();
     render(<App backendClient={createBackend()} />);

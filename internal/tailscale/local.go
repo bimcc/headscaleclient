@@ -48,6 +48,10 @@ func (d *localDaemon) SwitchProfile(ctx context.Context, id ipn.ProfileID) error
 	return d.client.SwitchProfile(ctx, id)
 }
 
+func (d *localDaemon) DeleteProfile(ctx context.Context, id ipn.ProfileID) error {
+	return d.client.DeleteProfile(ctx, id)
+}
+
 func (d *localDaemon) Logout(ctx context.Context) error {
 	return d.client.Logout(ctx)
 }

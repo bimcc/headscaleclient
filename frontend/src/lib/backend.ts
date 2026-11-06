@@ -346,6 +346,23 @@ class DemoBackend implements HeadscaleBackend {
     return this.copy();
   }
 
+  async removeProfile(profileId: string) {
+    await pause();
+    const profile = this.snapshot.profiles.find((item) => item.id === profileId);
+    if (!profile) throw new Error("找不到所选登录身份。 ");
+    this.snapshot.profiles = this.snapshot.profiles.filter((item) => item.id !== profileId);
+    if (this.snapshot.activeProfileId === profileId) {
+      this.snapshot.activeProfileId = null;
+      this.snapshot.activeEndpointId = null;
+      this.snapshot.runtime.session = "login-required";
+      this.snapshot.runtime.connection = "stopped";
+      this.snapshot.runtime.control = "unknown";
+      this.snapshot.localDevice.connectionType = "offline";
+    }
+    this.touch();
+    return this.copy();
+  }
+
   async beginLogin(endpointId: string): Promise<LoginResult> {
     await pause();
     const endpoint = this.snapshot.endpoints.find((item) => item.id === endpointId);
@@ -356,6 +373,14 @@ class DemoBackend implements HeadscaleBackend {
       endpointId,
       authUrl: `${endpoint.url}/register/demo-device`,
     };
+  }
+
+  async reauthenticateProfile(endpointId: string, profileId: string): Promise<LoginResult> {
+    const profile = this.snapshot.profiles.find((item) => item.id === profileId);
+    if (!profile || !profile.active || profile.state !== "login-required" || profile.endpointId !== endpointId) {
+      throw new Error("此登录身份当前不需要重新认证。 ");
+    }
+    return this.beginLogin(endpointId);
   }
 
   async setAppSetting(key: AppSettingKey, value: boolean) {
@@ -409,8 +434,11 @@ class NativeBackend implements HeadscaleBackend {
   saveEndpoint = (input: EndpointInput) => this.invoke(this.bindings.SaveEndpoint(input));
   deleteEndpoint = (endpointId: string) => this.invoke(this.bindings.DeleteEndpoint(endpointId));
   switchProfile = (profileId: string) => this.invoke(this.bindings.SwitchProfile(profileId));
+  removeProfile = (profileId: string) => this.invoke(this.bindings.RemoveProfile(profileId));
   logout = () => this.invoke(this.bindings.Logout());
   beginLogin = (endpointId: string) => this.invoke(this.bindings.BeginLogin(endpointId));
+  reauthenticateProfile = (endpointId: string, profileId: string) =>
+    this.invoke(this.bindings.ReauthenticateProfile(endpointId, profileId));
   setAppSetting = (key: AppSettingKey, value: boolean) =>
     this.invoke(this.bindings.SetAppSetting(key, value));
   setTheme = (theme: ThemePreference) => this.invoke(this.bindings.SetTheme(theme));

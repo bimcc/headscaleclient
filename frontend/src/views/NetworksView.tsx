@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ExternalLink, Globe2, LogIn, LogOut, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, ExternalLink, Globe2, LogIn, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import type {
   Endpoint,
@@ -144,49 +144,49 @@ function DeleteEndpointDialog({
   );
 }
 
-function LogoutDialog({
+function RemoveProfileDialog({
   profile,
   endpointName,
   onClose,
-  onLogout,
+  onRemoveProfile,
 }: {
   profile: LoginProfile;
   endpointName: string;
   onClose: () => void;
-  onLogout: () => Promise<void>;
+  onRemoveProfile: (profileId: string) => Promise<void>;
 }) {
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const logout = async () => {
+  const remove = async () => {
     setBusy(true);
     setError("");
     try {
-      await onLogout();
+      await onRemoveProfile(profile.id);
       onClose();
-    } catch (logoutError) {
-      setError(logoutError instanceof Error ? logoutError.message : t("profile.logoutFailed"));
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : t("profile.logoutFailed"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Modal title={t("profile.logoutTitle")} onClose={onClose}>
+    <Modal title={t(profile.active ? "profile.logoutTitle" : "profile.removeTitle")} onClose={onClose}>
       <div className="confirm-dialog">
         <p>
-          {t("profile.logoutConfirm", { name: profile.displayName, endpoint: endpointName })}
+          {t(profile.active ? "profile.logoutConfirm" : "profile.removeConfirm", { name: profile.displayName, endpoint: endpointName })}
         </p>
         <div className="identity-removal-warning">
           <AlertTriangle aria-hidden="true" size={18} />
-          <p>{t("profile.logoutReauth")}</p>
+          <p>{t(profile.active ? "profile.logoutReauth" : "profile.removeWarning")}</p>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="form-actions">
           <button className="button secondary" type="button" disabled={busy} onClick={onClose}>{t("common.cancel")}</button>
-          <button className="button danger" type="button" disabled={busy} onClick={() => void logout()}>
-            <LogOut aria-hidden="true" size={16} /> {busy ? t("profile.loggingOut") : t("profile.confirmLogout")}
+          <button className="button danger" type="button" disabled={busy} onClick={() => void remove()}>
+            <Trash2 aria-hidden="true" size={16} /> {busy ? t(profile.active ? "profile.loggingOut" : "profile.removing") : t(profile.active ? "profile.confirmLogout" : "profile.confirmRemove")}
           </button>
         </div>
       </div>
@@ -202,8 +202,9 @@ type NetworksViewProps = {
   onSaveEndpoint: (input: EndpointInput) => Promise<void>;
   onDeleteEndpoint: (endpointId: string) => Promise<void>;
   onSwitchProfile: (profileId: string) => Promise<void>;
-  onLogout: () => Promise<void>;
+  onRemoveProfile: (profileId: string) => Promise<void>;
   onBeginLogin: (endpointId: string) => Promise<LoginResult>;
+  onReauthenticateProfile: (endpointId: string, profileId: string) => Promise<LoginResult>;
   onOpenURL: (url: string) => Promise<void>;
 };
 
@@ -225,14 +226,15 @@ export function NetworksView({
   onSaveEndpoint,
   onDeleteEndpoint,
   onSwitchProfile,
-  onLogout,
+  onRemoveProfile,
   onBeginLogin,
+  onReauthenticateProfile,
   onOpenURL,
 }: NetworksViewProps) {
   const { t } = useI18n();
   const [endpointDialog, setEndpointDialog] = useState<Endpoint | null | undefined>(undefined);
   const [deleteEndpoint, setDeleteEndpoint] = useState<Endpoint | null>(null);
-  const [logoutProfile, setLogoutProfile] = useState<LoginProfile | null>(null);
+  const [removeProfile, setRemoveProfile] = useState<LoginProfile | null>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [loginState, setLoginState] = useState<LoginResult | null>(null);
   const [loginFailure, setLoginFailure] = useState<{ endpointId: string; message: string } | null>(null);
@@ -269,13 +271,15 @@ export function NetworksView({
     }
   };
 
-  const login = async (endpointId: string) => {
+  const login = async (endpointId: string, profileId?: string) => {
     selectEndpoint(endpointId);
     setLoginState(null);
     setLoginFailure(null);
     setLoginBusyId(endpointId);
     try {
-      const result = await onBeginLogin(endpointId);
+      const result = profileId
+        ? await onReauthenticateProfile(endpointId, profileId)
+        : await onBeginLogin(endpointId);
       setLoginState(result);
       void onOpenURL(result.authUrl).catch(() => undefined);
     } catch (loginError) {
@@ -442,15 +446,21 @@ export function NetworksView({
                         <span className="truncate" title={profile.account}>{profile.account || t("profile.loginNameMissing")}</span>
                       </div>
                       <StatusBadge tone={profile.state === "ready" ? (active ? "success" : "neutral") : "warning"}>{profileStatusLabel(profile, active, t)}</StatusBadge>
-                      {active ? (
-                        <button className="button secondary profile-action logout-action with-icon" type="button" disabled={loginBusyId !== null} onClick={() => setLogoutProfile(profile)}>
-                          <LogOut aria-hidden="true" size={15} /> {t("profile.logout")}
+                      <div className="profile-actions">
+                        {active && profile.state === "login-required" && (
+                          <button className="button primary profile-action with-icon" type="button" disabled={loginBusyId !== null} onClick={() => void login(profile.endpointId, profile.id)}>
+                            <LogIn aria-hidden="true" size={15} /> {loginBusyId === profile.endpointId ? t("endpoint.connecting") : t("profile.reauthenticate")}
+                          </button>
+                        )}
+                        {!active && (
+                          <button className="button secondary profile-action" type="button" disabled={switchingId !== null || loginBusyId !== null} onClick={() => void switchProfile(profile.id)}>
+                            {switchingId === profile.id ? t("profile.switching") : t("profile.switch")}
+                          </button>
+                        )}
+                        <button className="button secondary profile-action logout-action with-icon" type="button" disabled={switchingId !== null || loginBusyId !== null} onClick={() => setRemoveProfile(profile)}>
+                          <Trash2 aria-hidden="true" size={15} /> {t(active ? "profile.logout" : "profile.remove")}
                         </button>
-                      ) : (
-                        <button className="button secondary profile-action" type="button" disabled={switchingId !== null || loginBusyId !== null} onClick={() => void switchProfile(profile.id)}>
-                          {switchingId === profile.id ? t("profile.switching") : t("profile.switch")}
-                        </button>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
@@ -462,12 +472,12 @@ export function NetworksView({
 
       {endpointDialog !== undefined && <EndpointDialog endpoint={endpointDialog} onClose={() => setEndpointDialog(undefined)} onSave={onSaveEndpoint} />}
       {deleteEndpoint && <DeleteEndpointDialog endpoint={deleteEndpoint} onClose={() => setDeleteEndpoint(null)} onDelete={onDeleteEndpoint} />}
-      {logoutProfile && (
-        <LogoutDialog
-          profile={logoutProfile}
-          endpointName={endpoints.find((endpoint) => endpoint.id === logoutProfile.endpointId)?.name ?? t("profile.currentEndpoint")}
-          onClose={() => setLogoutProfile(null)}
-          onLogout={onLogout}
+      {removeProfile && (
+        <RemoveProfileDialog
+          profile={removeProfile}
+          endpointName={endpoints.find((endpoint) => endpoint.id === removeProfile.endpointId)?.name ?? t("profile.currentEndpoint")}
+          onClose={() => setRemoveProfile(null)}
+          onRemoveProfile={onRemoveProfile}
         />
       )}
     </div>

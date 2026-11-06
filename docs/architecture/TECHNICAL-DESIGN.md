@@ -288,14 +288,20 @@ conflict.
 8. Convert `BrowseToURL`, state, and login completion notifications to product events.
 9. On completion, fetch a full snapshot and associate the daemon profile with the endpoint.
 
-Changing the `ControlURL` of a running authenticated profile is not supported.
-The UI creates or switches profiles instead of silently forcing reauthentication.
+Reauthentication is a distinct flow: validate that the requested identity is
+the active `login-required` profile and belongs to the selected endpoint, then
+start interactive login without switching to an empty profile. This keeps the
+existing profile stable and avoids creating a duplicate identity. A normal
+login/add-account flow still creates a new empty profile first.
 
 Endpoint records and daemon profiles have different ownership. The config store
 persists endpoint metadata and profile associations; `tailscaled` persists
-account credentials and selects exactly one active profile. `Logout` delegates
-to LocalAPI for the current profile only. It does not use `DeleteProfile` to
-pretend that an inactive local-profile deletion is a server logout.
+account credentials and selects exactly one active profile. Removing a local
+identity attempts LocalAPI logout only when the target is active, then always
+uses `DeleteProfile` to guarantee that the local entry is removed even if the
+profile was already logged out. Inactive identities are deleted locally
+without affecting the currently active profile. Disconnecting the network
+does not delete any profile.
 
 ## Watch strategy
 

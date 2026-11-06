@@ -42,8 +42,8 @@ export function androidBindings(): BackendBindings {
     SetPreference: (key, value) => androidCall("SetPreference", [key, value]),
     SetExitNode: (id) => androidCall("SetExitNode", [id]), PingDevice: (id) => androidCall("PingDevice", [id]),
     SaveEndpoint: (input) => androidCall("SaveEndpoint", [input]), DeleteEndpoint: (id) => androidCall("DeleteEndpoint", [id]),
-    SwitchProfile: (id) => androidCall("SwitchProfile", [id]), Logout: () => androidCall("Logout"),
-    BeginLogin: (id) => androidCall("BeginLogin", [id]), SetAppSetting: (key, value) => androidCall("SetAppSetting", [key, value]),
+    SwitchProfile: (id) => androidCall("SwitchProfile", [id]), RemoveProfile: (id) => androidCall("RemoveProfile", [id]), Logout: () => androidCall("Logout"),
+    BeginLogin: (id) => androidCall("BeginLogin", [id]), ReauthenticateProfile: (endpointID, profileID) => androidCall("ReauthenticateProfile", [endpointID, profileID]), SetAppSetting: (key, value) => androidCall("SetAppSetting", [key, value]),
     SetTheme: (theme) => androidCall("SetTheme", [theme]), SetLanguage: (language) => androidCall("SetLanguage", [language]),
   };
 }

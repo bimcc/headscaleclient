@@ -105,6 +105,44 @@ func (a *Adapter) SwitchProfile(ctx context.Context, profileID string) error {
 	return nil
 }
 
+// RemoveProfile first asks the control server to log out the current profile
+// when possible, then explicitly removes the local profile. Logout alone is
+// insufficient for profiles that are already logged out: upstream treats
+// that case as a no-op and leaves the profile entry behind.
+func (a *Adapter) RemoveProfile(ctx context.Context, profileID string) error {
+	profileID = strings.TrimSpace(profileID)
+	if profileID == "" {
+		return domain.NewError(domain.ErrorInvalidArgument, "A profile ID is required.")
+	}
+
+	current, profiles, err := a.daemon.ProfileStatus(ctx)
+	if err != nil {
+		return classifyError(err)
+	}
+	found := false
+	for _, profile := range profiles {
+		if string(profile.ID) == profileID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return domain.NewError(domain.ErrorNotFound, "The login identity no longer exists on this device.")
+	}
+
+	var logoutErr error
+	if current.ID != "" && string(current.ID) == profileID {
+		logoutErr = a.daemon.Logout(ctx)
+	}
+	if err := a.daemon.DeleteProfile(ctx, ipn.ProfileID(profileID)); err != nil {
+		if logoutErr != nil {
+			return classifyError(fmt.Errorf("logout failed (%v) and local profile removal failed: %w", logoutErr, err))
+		}
+		return classifyError(err)
+	}
+	return nil
+}
+
 func (a *Adapter) Logout(ctx context.Context) error {
 	if err := a.daemon.Logout(ctx); err != nil {
 		return classifyError(err)
@@ -113,8 +151,32 @@ func (a *Adapter) Logout(ctx context.Context) error {
 }
 
 func (a *Adapter) BeginInteractiveLogin(ctx context.Context, controlURL string) (string, error) {
-	if err := a.daemon.SwitchToEmptyProfile(ctx); err != nil {
-		return "", classifyError(err)
+	return a.beginInteractiveLogin(ctx, controlURL, true)
+}
+
+// ReauthenticateProfile starts login in the active saved profile so a
+// login-required account can recover without creating a duplicate identity.
+func (a *Adapter) ReauthenticateProfile(ctx context.Context, controlURL string) (string, error) {
+	return a.beginInteractiveLogin(ctx, controlURL, false)
+}
+
+func (a *Adapter) beginInteractiveLogin(ctx context.Context, controlURL string, createProfile bool) (string, error) {
+	if strings.TrimSpace(controlURL) == "" {
+		return "", domain.NewError(domain.ErrorInvalidArgument, "A control server URL is required.")
+	}
+	if createProfile {
+		if err := a.daemon.SwitchToEmptyProfile(ctx); err != nil {
+			return "", classifyError(err)
+		}
+	}
+	if !createProfile {
+		current, _, err := a.daemon.ProfileStatus(ctx)
+		if err != nil {
+			return "", classifyError(err)
+		}
+		if current.ID == "" {
+			return "", domain.NewError(domain.ErrorPreconditionFailed, "There is no saved active identity to reauthenticate.")
+		}
 	}
 
 	watcher, err := a.openWatcher(ctx)

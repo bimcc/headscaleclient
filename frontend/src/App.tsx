@@ -190,6 +190,19 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
               onExitNodeChange={(deviceId) => void applySnapshotAction("exitNode", () => backendClient.setExitNode(deviceId)).catch(() => undefined)}
               onCopy={copyText}
               onShowDevices={() => setView("devices")}
+              onShowNetworks={() => setView("networks")}
+              onReauthenticate={() => {
+                if (!activeEndpoint || !activeProfile) {
+                  setView("networks");
+                  return;
+                }
+                setBusy("reauthenticate");
+                void backendClient.reauthenticateProfile(activeEndpoint.id, activeProfile.id)
+                  .then((result) => openExternalURL(result.authUrl))
+                  .then(() => setToast(t("profile.browserOpened")))
+                  .catch((error: unknown) => setToast(error instanceof Error ? error.message : t("endpoint.loginFailure")))
+                  .finally(() => setBusy(null));
+              }}
             />
           )}
           {view === "devices" && (
@@ -220,10 +233,18 @@ export function App({ backendClient = defaultBackend }: { backendClient?: Headsc
               onSaveEndpoint={async (input) => { await saveEndpoint(input); }}
               onDeleteEndpoint={async (endpointId) => { await deleteEndpoint(endpointId); }}
               onSwitchProfile={async (profileId) => { await switchProfile(profileId); }}
-              onLogout={async () => { await applySnapshotAction("logout", () => backendClient.logout(), t("account.loggedOut")); }}
+              onRemoveProfile={async (profileId) => { await applySnapshotAction("remove-profile", () => backendClient.removeProfile(profileId), t("profile.removed")); }}
               onBeginLogin={async (endpointId) => {
                 try {
                   return await backendClient.beginLogin(endpointId);
+                } catch (error) {
+                  setToast(error instanceof Error ? error.message : t("endpoint.loginFailure"));
+                  throw error;
+                }
+              }}
+              onReauthenticateProfile={async (endpointId, profileId) => {
+                try {
+                  return await backendClient.reauthenticateProfile(endpointId, profileId);
                 } catch (error) {
                   setToast(error instanceof Error ? error.message : t("endpoint.loginFailure"));
                   throw error;

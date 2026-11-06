@@ -697,6 +697,85 @@ func TestBeginLoginReturnsFrontendContractAndURLEvent(t *testing.T) {
 	}
 }
 
+func TestReauthenticateProfileUsesExistingActiveIdentity(t *testing.T) {
+	t.Parallel()
+
+	daemon := &fakeDaemon{snapshot: healthyDomainSnapshot(), beginURL: "https://login.example/auth"}
+	daemon.snapshot.State.Session = domain.SessionLoginRequired
+	daemon.snapshot.ActiveProfile = &domain.ProfileSummary{ID: "profile-1", ControlURL: "https://hs.example"}
+	daemon.profiles = domain.ProfileCollection{
+		ActiveID: "profile-1",
+		Profiles: []domain.ProfileSummary{{ID: "profile-1", ControlURL: "https://hs.example", Active: true}},
+	}
+	store := newFakeStore()
+	store.endpoints = []domain.ControlEndpoint{{
+		ID: "endpoint-1", Name: "Headscale", BaseURL: "https://hs.example", Provider: domain.ProviderHeadscale,
+	}}
+	service := mustService(t, daemon, store, &recordingSink{})
+
+	result, err := service.ReauthenticateProfile("endpoint-1", "profile-1")
+	if err != nil {
+		t.Fatalf("ReauthenticateProfile() error: %v", err)
+	}
+	if result.EndpointID != "endpoint-1" || result.AuthURL != daemon.beginURL {
+		t.Fatalf("login result = %+v", result)
+	}
+	if !daemon.reauthenticateCalled {
+		t.Fatal("ReauthenticateProfile() did not use the existing profile")
+	}
+	if daemon.beginControlURL != "https://hs.example" {
+		t.Fatalf("control URL = %q", daemon.beginControlURL)
+	}
+}
+
+func TestReauthenticateProfileRejectsWrongControlServer(t *testing.T) {
+	t.Parallel()
+
+	daemon := &fakeDaemon{snapshot: healthyDomainSnapshot(), beginURL: "https://login.example/auth"}
+	daemon.snapshot.State.Session = domain.SessionLoginRequired
+	daemon.snapshot.ActiveProfile = &domain.ProfileSummary{ID: "profile-1", ControlURL: "https://other.example"}
+	daemon.profiles = domain.ProfileCollection{
+		ActiveID: "profile-1",
+		Profiles: []domain.ProfileSummary{{ID: "profile-1", ControlURL: "https://other.example", Active: true}},
+	}
+	store := newFakeStore()
+	store.endpoints = []domain.ControlEndpoint{{
+		ID: "endpoint-1", Name: "Headscale", BaseURL: "https://hs.example", Provider: domain.ProviderHeadscale,
+	}}
+	service := mustService(t, daemon, store, nil)
+
+	if _, err := service.ReauthenticateProfile("endpoint-1", "profile-1"); err == nil {
+		t.Fatal("ReauthenticateProfile() succeeded for a profile owned by another server")
+	}
+	if daemon.reauthenticateCalled {
+		t.Fatal("daemon login was started for a mismatched control server")
+	}
+}
+
+func TestRemoveProfileRemovesSelectedLocalIdentity(t *testing.T) {
+	t.Parallel()
+
+	daemon := &fakeDaemon{
+		snapshot: healthyDomainSnapshot(),
+		profiles: domain.ProfileCollection{
+			ActiveID: "profile-1",
+			Profiles: []domain.ProfileSummary{{ID: "profile-1", ControlURL: "https://hs.example", Active: true}},
+		},
+	}
+	service := mustService(t, daemon, newFakeStore(), nil)
+
+	snapshot, err := service.RemoveProfile("profile-1")
+	if err != nil {
+		t.Fatalf("RemoveProfile() error: %v", err)
+	}
+	if daemon.removeProfileID != "profile-1" {
+		t.Fatalf("removed profile ID = %q", daemon.removeProfileID)
+	}
+	if len(snapshot.Profiles) != 0 || snapshot.ActiveProfileID != nil {
+		t.Fatalf("snapshot after removal = profiles %#v, active %#v", snapshot.Profiles, snapshot.ActiveProfileID)
+	}
+}
+
 func TestBeginLoginReportsUnreachableEndpointBeforeChangingDaemon(t *testing.T) {
 	t.Parallel()
 
@@ -1151,23 +1230,25 @@ func TestWatcherInitialEventThenEOFStillIncreasesBackoff(t *testing.T) {
 type fakeDaemon struct {
 	mu sync.Mutex
 
-	snapshot        domain.AppSnapshot
-	snapshotErr     error
-	snapshotFn      func(context.Context) (domain.AppSnapshot, error)
-	profiles        domain.ProfileCollection
-	profilesErr     error
-	patches         []domain.PreferencePatch
-	running         []bool
-	beginURL        string
-	beginErr        error
-	beginFn         func(context.Context, string) (string, error)
-	beginControlURL string
-	logoutCalled    bool
-	logoutErr       error
-	pingResult      tailscale.PingResult
-	pingErr         error
-	watchFn         func(context.Context, func(tailscale.Event)) error
-	watchCalls      int
+	snapshot             domain.AppSnapshot
+	snapshotErr          error
+	snapshotFn           func(context.Context) (domain.AppSnapshot, error)
+	profiles             domain.ProfileCollection
+	profilesErr          error
+	patches              []domain.PreferencePatch
+	running              []bool
+	beginURL             string
+	beginErr             error
+	beginFn              func(context.Context, string) (string, error)
+	beginControlURL      string
+	reauthenticateCalled bool
+	removeProfileID      string
+	logoutCalled         bool
+	logoutErr            error
+	pingResult           tailscale.PingResult
+	pingErr              error
+	watchFn              func(context.Context, func(tailscale.Event)) error
+	watchCalls           int
 }
 
 type fakeDaemonLifecycle struct {
@@ -1317,6 +1398,26 @@ func (d *fakeDaemon) SwitchProfile(_ context.Context, profileID string) error {
 	return nil
 }
 
+func (d *fakeDaemon) RemoveProfile(_ context.Context, profileID string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.removeProfileID = profileID
+	if d.profiles.ActiveID == profileID {
+		d.profiles.ActiveID = ""
+		d.snapshot.ActiveProfile = nil
+		d.snapshot.State.Session = domain.SessionLoginRequired
+		d.snapshot.State.Connection = domain.ConnectionStopped
+	}
+	profiles := d.profiles.Profiles[:0]
+	for _, profile := range d.profiles.Profiles {
+		if profile.ID != profileID {
+			profiles = append(profiles, profile)
+		}
+	}
+	d.profiles.Profiles = profiles
+	return nil
+}
+
 func (d *fakeDaemon) Logout(context.Context) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -1334,6 +1435,19 @@ func (d *fakeDaemon) Logout(context.Context) error {
 
 func (d *fakeDaemon) BeginInteractiveLogin(ctx context.Context, controlURL string) (string, error) {
 	d.mu.Lock()
+	d.beginControlURL = controlURL
+	beginFn := d.beginFn
+	if beginFn != nil {
+		d.mu.Unlock()
+		return beginFn(ctx, controlURL)
+	}
+	defer d.mu.Unlock()
+	return d.beginURL, d.beginErr
+}
+
+func (d *fakeDaemon) ReauthenticateProfile(ctx context.Context, controlURL string) (string, error) {
+	d.mu.Lock()
+	d.reauthenticateCalled = true
 	d.beginControlURL = controlURL
 	beginFn := d.beginFn
 	if beginFn != nil {

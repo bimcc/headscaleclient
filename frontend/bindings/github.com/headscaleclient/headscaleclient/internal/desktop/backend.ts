@@ -45,6 +45,14 @@ export function PingDevice(deviceID: string): $CancellablePromise<tailscale$0.Pi
     return $Call.ByID(3511441594, deviceID);
 }
 
+export function ReauthenticateProfile(endpointID: string, profileID: string): $CancellablePromise<application$0.LoginResult> {
+    return $Call.ByID(2275067925, endpointID, profileID);
+}
+
+export function RemoveProfile(profileID: string): $CancellablePromise<application$0.AppSnapshot> {
+    return $Call.ByID(1222566021, profileID);
+}
+
 export function SaveEndpoint(input: application$0.EndpointInput): $CancellablePromise<application$0.AppSnapshot> {
     return $Call.ByID(3266011660, input);
 }

@@ -67,12 +67,20 @@ func (b *Backend) SwitchProfile(profileID string) (appservice.AppSnapshot, error
 	return b.service.SwitchProfile(profileID)
 }
 
+func (b *Backend) RemoveProfile(profileID string) (appservice.AppSnapshot, error) {
+	return b.service.RemoveProfile(profileID)
+}
+
 func (b *Backend) Logout() (appservice.AppSnapshot, error) {
 	return b.service.Logout()
 }
 
 func (b *Backend) BeginLogin(endpointID string) (appservice.LoginResult, error) {
 	return b.service.BeginLogin(endpointID)
+}
+
+func (b *Backend) ReauthenticateProfile(endpointID, profileID string) (appservice.LoginResult, error) {
+	return b.service.ReauthenticateProfile(endpointID, profileID)
 }
 
 func (b *Backend) SetAppSetting(key appservice.AppSettingKey, value bool) (appservice.AppSnapshot, error) {

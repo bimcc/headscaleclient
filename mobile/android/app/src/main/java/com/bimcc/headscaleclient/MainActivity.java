@@ -68,21 +68,21 @@ public final class MainActivity extends Activity implements ClientApplication.Ev
                     respond(reply, id, opened ? "{\"result\":null}" : error(getString(R.string.browser_failed))); return;
                 }
                 boolean wasDesired = app.desired();
-                java.util.concurrent.ExecutorService executor = Arrays.asList("BeginLogin", "SwitchProfile", "SetConnection", "Logout").contains(method) ? app.vpnWorker : app.worker;
+                java.util.concurrent.ExecutorService executor = Arrays.asList("BeginLogin", "ReauthenticateProfile", "SwitchProfile", "SetConnection", "Logout", "RemoveProfile").contains(method) ? app.vpnWorker : app.worker;
                 Runnable execute = () -> executor.execute(() -> {
                     try {
                         String response = app.awaitClient().request(method, args.toString());
                         boolean ok = !new JSONObject(response).has("error");
-                        if (!ok && !wasDesired && ("BeginLogin".equals(method) || "SwitchProfile".equals(method) || "SetConnection".equals(method))) {
+                        if (!ok && !wasDesired && ("BeginLogin".equals(method) || "ReauthenticateProfile".equals(method) || "SwitchProfile".equals(method) || "SetConnection".equals(method))) {
                             app.setDesired(false); stopService(new Intent(this, TunnelService.class));
                         }
-                        if (ok && ("Logout".equals(method) || ("SetConnection".equals(method) && !args.getBoolean(0)))) {
+                        if (ok && ("Logout".equals(method) || "RemoveProfile".equals(method) || ("SetConnection".equals(method) && !args.getBoolean(0)))) {
                             app.setDesired(false); stopService(new Intent(this, TunnelService.class));
                         }
                         respond(reply, id, response);
                     } catch (Exception e) { respond(reply, id, error(getString(R.string.startup_failed))); }
                 });
-                boolean needsVpn = "BeginLogin".equals(method) || "SwitchProfile".equals(method)
+                boolean needsVpn = "BeginLogin".equals(method) || "ReauthenticateProfile".equals(method) || "SwitchProfile".equals(method)
                     || ("SetConnection".equals(method) && args.length() == 1 && args.getBoolean(0));
                 if (needsVpn) {
                     if (afterPermission != null) { respond(reply,id,error(getString(R.string.vpn_permission_denied))); return; }

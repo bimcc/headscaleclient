@@ -23,8 +23,9 @@ func Call(service *application.Service, method, arguments string) (any, error) {
 	}
 	counts := map[string]int{"GetSnapshot": 0, "EnsureDaemon": 0, "SetConnection": 1,
 		"SetPreference": 2, "SetExitNode": 1, "PingDevice": 1, "SaveEndpoint": 1,
-		"DeleteEndpoint": 1, "SwitchProfile": 1, "Logout": 0, "BeginLogin": 1,
-		"SetTheme": 1, "SetLanguage": 1}
+		"DeleteEndpoint": 1, "SwitchProfile": 1, "RemoveProfile": 1, "Logout": 0, "BeginLogin": 1,
+		"ReauthenticateProfile": 2,
+		"SetTheme":              1, "SetLanguage": 1}
 	n, ok := counts[method]
 	if !ok {
 		return nil, errors.New("unsupported Android operation")
@@ -36,9 +37,15 @@ func Call(service *application.Service, method, arguments string) (any, error) {
 		return nil, errors.New("argument cannot be null")
 	}
 	var str string
+	var str2 string
 	var enabled bool
 	if n > 0 && method != "SetConnection" && method != "SetExitNode" && method != "SaveEndpoint" {
 		if err := json.Unmarshal(args[0], &str); err != nil {
+			return nil, err
+		}
+	}
+	if method == "ReauthenticateProfile" {
+		if err := json.Unmarshal(args[1], &str2); err != nil {
 			return nil, err
 		}
 	}
@@ -75,10 +82,14 @@ func Call(service *application.Service, method, arguments string) (any, error) {
 		return service.DeleteEndpoint(str)
 	case "SwitchProfile":
 		return service.SwitchProfile(str)
+	case "RemoveProfile":
+		return service.RemoveProfile(str)
 	case "Logout":
 		return service.Logout()
 	case "BeginLogin":
 		return service.BeginLogin(str)
+	case "ReauthenticateProfile":
+		return service.ReauthenticateProfile(str, str2)
 	case "SetTheme":
 		return service.SetTheme(domain.Theme(str))
 	case "SetLanguage":

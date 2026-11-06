@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Copy,
   Info,
+  LogIn,
   Laptop,
   Monitor,
   Radio,
@@ -62,6 +63,8 @@ export function OverviewView({
   onExitNodeChange,
   onCopy,
   onShowDevices,
+  onShowNetworks,
+  onReauthenticate,
 }: {
   snapshot: AppSnapshot;
   busy: string | null;
@@ -71,6 +74,8 @@ export function OverviewView({
   onExitNodeChange: (deviceId: string | null) => void;
   onCopy: (value: string, label?: string) => void;
   onShowDevices: () => void;
+  onShowNetworks: () => void;
+  onReauthenticate: () => void;
 }) {
   const { t } = useI18n();
   const healthNotices = snapshot.healthNotices ?? [];
@@ -131,12 +136,27 @@ export function OverviewView({
             <span className="online-device-suffix"> {t("overview.onlineSuffix")}</span>
           </span>
         </button>
-        <Toggle
-          label={isTunnelRunning ? t("connection.disconnect") : t("connection.connect")}
-          checked={isTunnelRunning}
-          disabled={busy === "connection"}
-          onChange={onConnectionChange}
-        />
+        {["login-required", "none"].includes(snapshot.runtime.session) ? (
+          <button
+            className="button primary with-icon connection-login-button"
+            type="button"
+            aria-label={profile && endpoint ? t("profile.reauthenticate") : t("endpoint.login")}
+            disabled={busy === "reauthenticate"}
+            onClick={profile && endpoint ? onReauthenticate : onShowNetworks}
+          >
+            <LogIn aria-hidden="true" size={16} />
+            <span className="connection-login-label">
+              {busy === "reauthenticate" ? t("endpoint.connecting") : profile && endpoint ? t("profile.reauthenticate") : t("endpoint.login")}
+            </span>
+          </button>
+        ) : (
+          <Toggle
+            label={isTunnelRunning ? t("connection.disconnect") : t("connection.connect")}
+            checked={isTunnelRunning}
+            disabled={busy === "connection"}
+            onChange={onConnectionChange}
+          />
+        )}
       </section>
 
       {snapshot.fallbackReason && (

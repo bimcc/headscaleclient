@@ -49,6 +49,10 @@ PKG. Its saved identities are not automatically copied; login may be needed.
 - Private state: `/Library/Application Support/BIMCC/HeadscaleClient/state/`.
 - LocalAPI: `/var/run/headscaleclient-tailscaled.socket`.
 - Service registration: `/Library/LaunchDaemons/io.headscaleclient.tailscaled.plist`.
+- Service logs: `/Library/Application Support/BIMCC/HeadscaleClient/logs/tailscaled.stderr.log`
+  and `tailscaled.stdout.log`. These are created with root-only permissions and
+  are the first place to check when the daemon is running but no `100.x` traffic
+  passes.
 - Installed policy result: `installation-mode` under the service root. This is
   only an ownership hint, not a credential or permission grant.
 - Opening the UI reads the installed managed socket exclusively. Restart the
@@ -103,6 +107,35 @@ trusted signing must be added before treating this as a notarized public build.
 - Virtual-IP traffic, direct/relay transitions, DNS, subnet routes and exit nodes.
 - Sleep/wake, Wi-Fi changes, startup at login and menu-bar interaction.
 - Upgrade/removal with an existing real identity, standard-user authorization.
+
+### Connectivity triage
+
+If the app shows a running service but a peer cannot be reached, first separate
+the Tailscale path probe from operating-system traffic. Run these commands on
+the Mac with the installed CLI and replace `<peer>` with a peer name or its
+`100.x` address:
+
+```sh
+cli='/Library/Application Support/BIMCC/HeadscaleClient/daemon/tailscale'
+socket='/var/run/headscaleclient-tailscaled.socket'
+"$cli" --socket="$socket" status
+"$cli" --socket="$socket" netcheck
+"$cli" --socket="$socket" ping <peer>
+/sbin/ping -c 4 <peer>
+```
+
+`tailscale ping` checks the encrypted peer path and reports direct or DERP
+transport. `/sbin/ping` checks ICMP and can be blocked by the peer's firewall,
+so those results can differ. If both fail, inspect the managed service and its
+captured daemon log:
+
+```sh
+sudo launchctl print system/io.headscaleclient.tailscaled
+sudo tail -n 100 '/Library/Application Support/BIMCC/HeadscaleClient/logs/tailscaled.stderr.log'
+```
+
+Remove device names, public addresses and other identifying values before
+sharing command output. Do not share state files, login URLs or keys.
 
 See [ADR 0004](../adr/0004-macos-launchd-distribution.md) for the service choice.
 See [ADR 0005](../adr/0005-macos-unified-installer.md) for unified installer policy.

@@ -21,6 +21,7 @@ type daemonAPI interface {
 	ProfileStatus(context.Context) (ipn.LoginProfile, []ipn.LoginProfile, error)
 	SwitchToEmptyProfile(context.Context) error
 	SwitchProfile(context.Context, ipn.ProfileID) error
+	DeleteProfile(context.Context, ipn.ProfileID) error
 	Logout(context.Context) error
 	Start(context.Context, ipn.Options) error
 	StartLoginInteractive(context.Context) error
