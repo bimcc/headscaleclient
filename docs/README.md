@@ -19,6 +19,7 @@ their corresponding behavior.
 11. [Android preview](product/ANDROID.md): native VPN host, mobile interaction and device acceptance.
 12. [Single-install and signing decision](adr/0008-single-install-and-signing.md): stable update identities and legacy migration.
 13. [Code signing policy](../CODE_SIGNING.md): test certificates and pending SignPath integration.
+14. [Branch and release workflow](DEVELOPMENT.md): mainline integration, temporary branches, checks, and cleanup.
 
 ## Document rules
 

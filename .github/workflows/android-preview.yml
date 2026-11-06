@@ -2,7 +2,7 @@ name: Android preview
 on:
   workflow_dispatch:
   push:
-    branches: [codex/android-preview]
+    branches: [main]
     paths: ['mobile/**', 'internal/**', 'frontend/**', '.github/workflows/android-preview.yml']
 permissions:
   contents: read

@@ -29,7 +29,7 @@ See [release notes](docs/releases/v0.2.1.md),
 
 ## Android technical preview
 
-Android development is on the `codex/android-preview` branch. The independent
+Android development is integrated into `main`. The independent
 APK embeds the pinned Tailscale 1.102.2 core, uses a native foreground VPN service
 and reuses the React UI and Go application layer. It does not require the
 official Tailscale app. See [Android architecture, build and acceptance](docs/product/ANDROID.md).
@@ -37,6 +37,9 @@ official Tailscale app. See [Android architecture, build and acceptance](docs/pr
 The initial target is an Honor phone using Clash Meta in proxy mode. Physical
 phone background/network tests and production signing remain acceptance gates;
 Android is not part of the stable desktop release yet.
+
+Source integration and stable releases are separate. See the
+[branch and release workflow](docs/DEVELOPMENT.md).
 
 ## Development prerequisites
 
